@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Runner } from "../../shared/types/game";
 import { electroview } from "../electroview";
 import { Button } from "./Button";
@@ -24,9 +24,48 @@ export function AddGameModal({
 	const [showWineSettings, setShowWineSettings] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
+	const [installerStatus, setInstallerStatus] = useState<
+		"idle" | "running" | "done" | "error"
+	>("idle");
+
+	// Listen for installer launch messages to update UI
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const onStarted = (payload: { gameId: string }) => {
+			if (payload.gameId !== "") return; // Not our installer
+			setInstallerStatus("running");
+			setError(null);
+		};
+
+		const onEnded = (payload: {
+			gameId: string;
+			exitCode: number | null;
+			durationMs: number;
+		}) => {
+			if (payload.gameId !== "") return; // Not our installer
+			if (payload.exitCode === 0 || payload.exitCode === null) {
+				setInstallerStatus("done");
+			} else {
+				setInstallerStatus("error");
+				setError(
+					`Installer exited with code ${payload.exitCode} after ${Math.round(payload.durationMs / 1000)}s`,
+				);
+			}
+		};
+
+		electroview.rpc.addMessageListener("gameLaunchStarted", onStarted);
+		electroview.rpc.addMessageListener("gameLaunchEnded", onEnded);
+
+		return () => {
+			electroview.rpc.removeMessageListener("gameLaunchStarted", onStarted);
+			electroview.rpc.removeMessageListener("gameLaunchEnded", onEnded);
+		};
+	}, [isOpen]);
 
 	const handleBrowseExecutable = async () => {
 		setError(null);
+		setInstallerStatus("idle"); // Reset status when selecting new file
 		try {
 			const selected = await electroview.rpc.request.openFileDialog();
 			if (selected) {
@@ -68,16 +107,18 @@ export function AddGameModal({
 				return; // User cancelled
 			}
 
+			// Pre-fill the executable path
+			setExecutable(selected);
+			setInstallerStatus("running");
+
 			// Run the selected exe with umu (fire and forget)
 			await electroview.rpc.request.runInstaller({
 				path: selected,
 				runner,
 				args: args.trim() || undefined,
 			});
-
-			// Pre-fill the executable path
-			setExecutable(selected);
 		} catch (err) {
+			setInstallerStatus("error");
 			setError(err instanceof Error ? err.message : "Failed to run installer");
 		}
 	};
@@ -123,6 +164,7 @@ export function AddGameModal({
 		setArgs("");
 		setShowWineSettings(false);
 		setError(null);
+		setInstallerStatus("idle");
 		onClose();
 	};
 
@@ -189,6 +231,49 @@ export function AddGameModal({
 								<span className="font-mono text-[10px] text-outline-variant/50 uppercase mt-2">
 									{title || "Title"}
 								</span>
+
+								{/* Installer Status Indicator */}
+								{installerStatus === "running" && (
+									<div className="mt-4 w-full bg-surface-container rounded border border-secondary/30 p-3">
+										<div className="flex items-center gap-2">
+											<span className="material-symbols-outlined text-secondary animate-spin text-lg">
+												hourglass_top
+											</span>
+											<span className="font-mono text-[10px] text-secondary uppercase">
+												Running Installer...
+											</span>
+										</div>
+										<p className="font-mono text-[9px] text-outline-variant mt-1">
+											Downloading Proton and launching installer
+										</p>
+									</div>
+								)}
+
+								{installerStatus === "done" && (
+									<div className="mt-4 w-full bg-surface-container rounded border border-secondary/30 p-3">
+										<div className="flex items-center gap-2">
+											<span className="material-symbols-outlined text-secondary text-lg">
+												check_circle
+											</span>
+											<span className="font-mono text-[10px] text-secondary uppercase">
+												Installation Complete
+											</span>
+										</div>
+									</div>
+								)}
+
+								{installerStatus === "error" && (
+									<div className="mt-4 w-full bg-surface-container rounded border border-error/30 p-3">
+										<div className="flex items-center gap-2">
+											<span className="material-symbols-outlined text-error text-lg">
+												error
+											</span>
+											<span className="font-mono text-[10px] text-error uppercase">
+												Installer Failed
+											</span>
+										</div>
+									</div>
+								)}
 							</div>
 						</div>
 
@@ -333,11 +418,25 @@ export function AddGameModal({
 							<div className="relative z-20 flex justify-end gap-3 p-6 border-t border-outline-variant/30 bg-surface-container/80 shrink-0">
 								<Button
 									variant="secondary"
-									icon="play_arrow"
+									icon={
+										installerStatus === "running"
+											? "hourglass_top"
+											: installerStatus === "done"
+												? "check_circle"
+												: installerStatus === "error"
+													? "error"
+													: "play_arrow"
+									}
 									onClick={handleRunInstaller}
 									disabled={submitting}
 								>
-									Run Installer First
+									{installerStatus === "running"
+										? "Running..."
+										: installerStatus === "done"
+											? "Run Again"
+											: installerStatus === "error"
+												? "Retry"
+												: "Run Installer First"}
 								</Button>
 								<Button
 									variant="primary"
