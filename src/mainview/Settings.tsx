@@ -13,7 +13,6 @@ export function Settings() {
 		"loading" | "configured" | "missing"
 	>("loading");
 	const [showKey, setShowKey] = useState(false);
-	const [isEditing, setIsEditing] = useState(false);
 	const [metadataSource, setMetadataSource] = useState<MetadataSource>("auto");
 	const [saving, setSaving] = useState(false);
 	const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -90,11 +89,6 @@ export function Settings() {
 		}
 	};
 
-	const displayValue =
-		rawgKeyStatus === "configured" && !showKey && !isEditing
-			? "•".repeat(Math.min(rawgKey.length, 24))
-			: rawgKey;
-
 	return (
 		<>
 			<SectionHeader
@@ -135,34 +129,22 @@ export function Settings() {
 							<div className="w-full space-y-3">
 								<div className="flex gap-2 w-full">
 									<input
-										type="text"
-										value={displayValue}
+										type={showKey ? "text" : "password"}
+										value={rawgKey}
 										onChange={(e) => setRawgKey(e.target.value)}
-										onFocus={() => {
-											if (!showKey && rawgKeyStatus === "configured") {
-												setShowKey(true);
-												setIsEditing(true);
-											}
-										}}
-										onBlur={() => setIsEditing(false)}
 										placeholder="Paste your RAWG API key here..."
 										className="flex-1 !py-2.5 px-3 bg-surface-container-high border border-outline-variant/50 rounded font-mono text-xs text-on-surface placeholder:text-outline-variant focus:border-primary focus:outline-none transition-colors"
 									/>
-									{rawgKeyStatus === "configured" && (
-										<button
-											type="button"
-											onClick={() => {
-												setShowKey(!showKey);
-												setIsEditing(false);
-											}}
-											className="shatter-clip bg-surface-container-high hover:bg-surface-variant border border-outline-variant/50 px-4 flex items-center justify-center transition-colors shrink-0"
-											title={showKey ? "Hide key (streaming)" : "Show key"}
-										>
-											<span className="material-symbols-outlined text-xl text-secondary">
-												{showKey ? "visibility_off" : "visibility"}
-											</span>
-										</button>
-									)}
+									<button
+										type="button"
+										onClick={() => setShowKey(!showKey)}
+										className="shatter-clip bg-surface-container-high hover:bg-surface-variant border border-outline-variant/50 px-4 flex items-center justify-center transition-colors shrink-0"
+										title={showKey ? "Hide key" : "Show key"}
+									>
+										<span className="material-symbols-outlined text-xl text-secondary">
+											{showKey ? "visibility_off" : "visibility"}
+										</span>
+									</button>
 								</div>
 								<div className="flex items-center gap-3">
 									<Button
