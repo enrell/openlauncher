@@ -56,6 +56,18 @@ export type LauncherRPC = {
 				params: { source: "rawg" | "steam" | "auto" };
 				response: boolean;
 			};
+			rawgKeyStore: {
+				params: { key: string };
+				response: boolean;
+			};
+			rawgKeyGet: {
+				params: undefined;
+				response: string | null;
+			};
+			rawgKeyDelete: {
+				params: undefined;
+				response: boolean;
+			};
 		};
 		// biome-ignore lint/complexity/noBannedTypes: empty messages object is intentional for RPC contract
 		messages: {};

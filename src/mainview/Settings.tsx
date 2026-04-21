@@ -5,17 +5,7 @@ import { Panel, SettingRow } from "./components/Panels";
 import { SectionHeader } from "./components/SectionHeader";
 import { electroview } from "./electroview";
 
-const RAWG_API_KEY_SECRET = "rawg-api-key";
-
 type MetadataSource = "rawg" | "steam" | "auto";
-
-function tryDeobfuscate(str: string): string {
-	try {
-		return atob(str);
-	} catch {
-		return str;
-	}
-}
 
 export function Settings() {
 	const [rawgKey, setRawgKey] = useState("");
@@ -29,11 +19,9 @@ export function Settings() {
 
 	const checkRawgKey = useCallback(async () => {
 		try {
-			const key = await electroview.rpc.request.credentialGet({
-				key: RAWG_API_KEY_SECRET,
-			});
+			const key = await electroview.rpc.request.rawgKeyGet();
 			if (key) {
-				setRawgKey(tryDeobfuscate(key));
+				setRawgKey(key);
 				setRawgKeyStatus("configured");
 			} else {
 				setRawgKey("");
@@ -62,12 +50,7 @@ export function Settings() {
 		setSaving(true);
 		setSaveMsg(null);
 		try {
-			const obfuscated = btoa(rawgKey.trim());
-			await electroview.rpc.request.credentialStore({
-				key: RAWG_API_KEY_SECRET,
-				value: obfuscated,
-			});
-			setRawgKey(tryDeobfuscate(obfuscated));
+			await electroview.rpc.request.rawgKeyStore({ key: rawgKey.trim() });
 			setRawgKeyStatus("configured");
 			setShowKey(false);
 			setSaveMsg("API key saved");
@@ -84,9 +67,7 @@ export function Settings() {
 		setSaving(true);
 		setSaveMsg(null);
 		try {
-			await electroview.rpc.request.credentialDelete({
-				key: RAWG_API_KEY_SECRET,
-			});
+			await electroview.rpc.request.rawgKeyDelete();
 			setRawgKey("");
 			setRawgKeyStatus("missing");
 			setSaveMsg("API key removed");
@@ -159,16 +140,18 @@ export function Settings() {
 										placeholder="Paste your RAWG API key here..."
 										className="flex-1 !py-2.5 px-3 bg-surface-container-high border border-outline-variant/50 rounded font-mono text-xs text-on-surface placeholder:text-outline-variant focus:border-primary focus:outline-none transition-colors"
 									/>
-									<button
-										type="button"
-										onClick={() => setShowKey(!showKey)}
-										className="shatter-clip bg-surface-container-high hover:bg-surface-variant border border-outline-variant/50 px-4 flex items-center justify-center transition-colors shrink-0"
-										title={showKey ? "Hide key" : "Show key"}
-									>
-										<span className="material-symbols-outlined text-xl text-secondary">
-											{showKey ? "visibility_off" : "visibility"}
-										</span>
-									</button>
+									{rawgKeyStatus === "configured" && (
+										<button
+											type="button"
+											onClick={() => setShowKey(!showKey)}
+											className="shatter-clip bg-surface-container-high hover:bg-surface-variant border border-outline-variant/50 px-4 flex items-center justify-center transition-colors shrink-0"
+											title={showKey ? "Hide key" : "Show key"}
+										>
+											<span className="material-symbols-outlined text-xl text-secondary">
+												{showKey ? "visibility_off" : "visibility"}
+											</span>
+										</button>
+									)}
 								</div>
 								<div className="flex items-center gap-3">
 									<Button

@@ -23,3 +23,15 @@ export function deobfuscate(encoded: string): string {
 
 	return new TextDecoder().decode(result);
 }
+
+export function frontendObfuscate(plaintext: string): string {
+	return obfuscate(plaintext);
+}
+
+export function frontendDeobfuscate(encoded: string): string {
+	try {
+		return deobfuscate(encoded);
+	} catch {
+		return encoded;
+	}
+}
