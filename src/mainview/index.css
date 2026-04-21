@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	color-scheme: dark;
+}
+
+body {
+	background-color: #08080a;
+	color: #e5e1e4;
+	background-image:
+		linear-gradient(rgba(157, 0, 255, 0.03) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(157, 0, 255, 0.03) 1px, transparent 1px);
+	background-size: 20px 20px;
+	min-height: 100vh;
+	margin: 0;
+}
+
+/* Utilities for SYNTH_OS theme */
+.shatter-clip {
+	clip-path: polygon(
+		10px 0,
+		100% 0,
+		100% calc(100% - 10px),
+		calc(100% - 10px) 100%,
+		0 100%,
+		0 10px
+	);
+}
+
+.shatter-clip-reverse {
+	clip-path: polygon(
+		0 0,
+		calc(100% - 10px) 0,
+		100% 10px,
+		100% 100%,
+		10px 100%,
+		0 calc(100% - 10px)
+	);
+}
+
+.scanlines {
+	background: linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0),
+		rgba(255, 255, 255, 0) 50%,
+		rgba(0, 0, 0, 0.2) 50%,
+		rgba(0, 0, 0, 0.2)
+	);
+	background-size: 100% 4px;
+}
+
+.glow-secondary {
+	box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+.glow-primary {
+	box-shadow: 0 0 15px rgba(157, 0, 255, 0.3);
+}
+
+/* TopAppBar Styles */
+.top-app-bar-bg {
+	background-color: rgba(8, 8, 10, 0.95);
+	backdrop-filter: blur(24px);
+}
+.top-app-bar-primary {
+	color: #9d00ff;
+}
+.top-app-bar-typo {
+	font-family: "Space Grotesk", sans-serif;
+	letter-spacing: -0.05em;
+	text-transform: uppercase;
+	font-weight: 700;
+	font-size: 0.875rem;
+}
+.top-app-bar-logo {
+	font-size: 1.5rem;
+	font-weight: 900;
+	color: #9d00ff;
+	font-style: italic;
+	letter-spacing: 0.1em;
+}
+.top-app-bar-shape {
+	position: sticky;
+	width: 100%;
+	top: 0;
+	clip-path: polygon(0 0, 100% 0, 98% 100%, 0 100%);
+}
+.top-app-bar-sep {
+	border-bottom: 1px solid rgba(157, 0, 255, 0.2);
+}
+.top-app-bar-shadow {
+	box-shadow: 0 0 15px rgba(157, 0, 255, 0.15);
+}
+.top-app-bar-active {
+	color: #00f3ff;
+	border-bottom: 2px solid #00f3ff;
+}
+.top-app-bar-inactive {
+	color: #64748b;
+	font-family: "JetBrains Mono", monospace;
+}
+.top-app-bar-hover {
+	transition: all 75ms;
+}
+.top-app-bar-hover:hover {
+	background-color: rgba(157, 0, 255, 0.1);
+	color: #00f3ff;
+}
+.top-app-bar-layout {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	padding: 0.75rem 1.5rem;
+	height: 4rem;
+	z-index: 50;
+}
+
+/* SideNavBar Styles */
+.side-nav-bg {
+	background-color: rgba(8, 8, 10, 0.9);
+}
+.side-nav-primary {
+	color: #00f3ff;
+}
+.side-nav-typo {
+	font-family: "JetBrains Mono", monospace;
+	font-size: 10px;
+	letter-spacing: 0.1em;
+	font-weight: 500;
+}
+.side-nav-shape {
+	clip-path: polygon(0 0, 100% 0, 85% 50%, 100% 100%, 0 100%);
+	width: 5rem;
+	height: 100vh;
+}
+.side-nav-sep {
+	border-right: 1px solid rgba(0, 243, 255, 0.1);
+}
+.side-nav-active {
+	background-color: rgba(157, 0, 255, 0.2);
+	color: #00f3ff;
+	border-left: 4px solid #00f3ff;
+	clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%);
+}
+.side-nav-inactive {
+	color: #475569;
+	filter: grayscale(100%);
+}
+.side-nav-inactive:hover {
+	filter: grayscale(0%);
+}
+.side-nav-hover {
+	transition: all 150ms ease-out;
+}
+.side-nav-hover:hover {
+	background-color: rgba(255, 255, 255, 0.05);
+	transform: translateX(0.25rem);
+}
+.side-nav-layout {
+	position: fixed;
+	left: 0;
+	top: 0;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding-top: 2rem;
+	padding-bottom: 2rem;
+	z-index: 40;
+}

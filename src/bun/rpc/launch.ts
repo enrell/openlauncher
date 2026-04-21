@@ -1,0 +1,75 @@
+import type { LauncherRPC } from "../../shared/rpc";
+import type { LaunchOptions, LaunchResult } from "../../shared/types/launch";
+import type { GameRepository } from "../database/queries";
+import { execute } from "../launcher";
+
+type LaunchStartedPayload =
+	LauncherRPC["webview"]["messages"]["gameLaunchStarted"];
+type LaunchEndedPayload = LauncherRPC["webview"]["messages"]["gameLaunchEnded"];
+
+type LaunchNotifications = {
+	started(payload: LaunchStartedPayload): void;
+	ended(payload: LaunchEndedPayload): void;
+};
+
+export function createLaunchRequestHandlers(
+	gameRepository: GameRepository,
+	notifications: LaunchNotifications,
+) {
+	return {
+		gameLaunch: async ({
+			id,
+			options,
+		}: {
+			id: string;
+			options?: Partial<LaunchOptions>;
+		}): Promise<LaunchResult> => {
+			const game = gameRepository.getGame(id);
+			if (!game) {
+				return {
+					success: false,
+					exitCode: null,
+					durationMs: 0,
+					error: `Game not found: ${id}`,
+				};
+			}
+
+			notifyStarted(notifications, {
+				gameId: game.id,
+				title: game.title,
+			});
+
+			const result = await execute(game, options);
+			notifyEnded(notifications, {
+				gameId: game.id,
+				title: game.title,
+				exitCode: result.exitCode,
+				durationMs: result.durationMs,
+			});
+
+			return result;
+		},
+	};
+}
+
+function notifyStarted(
+	notifications: LaunchNotifications,
+	payload: LaunchStartedPayload,
+): void {
+	try {
+		notifications.started(payload);
+	} catch {
+		// The launch result is more important than a best-effort UI event.
+	}
+}
+
+function notifyEnded(
+	notifications: LaunchNotifications,
+	payload: LaunchEndedPayload,
+): void {
+	try {
+		notifications.ended(payload);
+	} catch {
+		// The launch result is more important than a best-effort UI event.
+	}
+}

@@ -1,0 +1,43 @@
+# Node/Bun dependencies
+node_modules/
+.bun/
+
+# Build outputs
+dist/
+build/
+artifacts/
+views/
+
+# Vite cache
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+
+# OS/Editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+.history/
+.codex
+CLAUDE.md
+
+# Electrobun/Electron artifacts (if any)
+*.asar
+
+# Test/coverage outputs
+coverage/
+
+# Misc
+*.tgz
+*.tar.zst
+*.zip
+*.bak
+*.tmp
