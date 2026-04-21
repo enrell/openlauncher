@@ -68,9 +68,6 @@ function App() {
 				<header className="top-app-bar-bg top-app-bar-shape top-app-bar-sep top-app-bar-shadow top-app-bar-layout shrink-0">
 					<div className="flex items-center gap-4">
 						<span className="top-app-bar-logo">OPENLAUNCHER</span>
-						<span className="font-mono text-xs text-outline-variant tracking-widest hidden sm:inline-block">
-							V.2.0.99-FINAL
-						</span>
 					</div>
 					<div className="flex items-center gap-2 h-full">
 						<button className="h-full px-4 flex items-center justify-center top-app-bar-inactive top-app-bar-hover">

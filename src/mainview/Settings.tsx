@@ -334,9 +334,6 @@ export function Settings() {
 							<span className="font-headline font-black text-4xl text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary italic tracking-widest mb-2">
 								SYNTH_OS
 							</span>
-							<span className="font-mono text-xs text-outline-variant mb-6 border border-outline-variant/30 px-2 py-1 shatter-clip">
-								V.2.0.99-FINAL
-							</span>
 
 							<div className="space-y-2 w-full text-left font-mono text-[10px] text-outline-variant bg-surface-dim p-3 border-l-2 border-primary-container/50 mb-6">
 								<p className="flex justify-between">
