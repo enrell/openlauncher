@@ -100,7 +100,7 @@ export function createMetadataService(
 					name: r.name,
 					slug: "",
 					released: null,
-					background_image: `https://steamcdn.fra.cdn.steamworkshop.com/cdn/external_icons/0d7e3c6e0a3a67e1e3c69f2fc8c0c8e8d1e3c6e0.png`,
+					background_image: r.thumb || null,
 					rating: 0,
 					metacritic: null,
 					genres: [],
