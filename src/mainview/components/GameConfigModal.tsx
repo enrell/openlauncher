@@ -88,6 +88,20 @@ export function GameConfigModal({
 		if (selected) setCwd(selected);
 	};
 
+	const handleBrowseCover = async () => {
+		setError(null);
+		try {
+			const selected = await electroview.rpc.request.openFileDialog();
+			if (selected) {
+				const fileUrl = selected.startsWith("/") ? `file://${selected}` : selected;
+				setCoverUrl(fileUrl);
+				setCoverPreview(fileUrl);
+			}
+		} catch (err) {
+			setError(`Failed to select file: ${err instanceof Error ? err.message : String(err)}`);
+		}
+	};
+
 	const handleSearchCover = async () => {
 		if (!title.trim()) return;
 		setSearchingCover(true);
@@ -255,6 +269,14 @@ export function GameConfigModal({
 													placeholder="Paste an URL or select a file..."
 													className="!py-2.5 flex-1"
 												/>
+												<button
+													type="button"
+													onClick={handleBrowseCover}
+													className="shatter-clip bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant/50 px-4 font-mono text-xs transition-colors flex items-center gap-2"
+												>
+													<span className="material-symbols-outlined text-[16px]">folder_open</span>
+													FILE
+												</button>
 												<button
 													type="button"
 													onClick={handleSearchCover}
