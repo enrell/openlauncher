@@ -21,22 +21,16 @@ export function createMetadataRequestHandlers(
 				return metadataService.searchSteam(query);
 			}
 
-			if (source === "rawg" && apiKey?.trim()) {
+			// Try RAWG if configured
+			if ((source === "rawg" || source === "auto") && apiKey?.trim()) {
 				const results = await metadataService.searchRAWG(query);
-				if (results.length > 0) {
+				// Only use RAWG results if they have at least one with a valid image
+				if (results.length > 0 && results.some((r) => r.background_image)) {
 					return results;
 				}
 			}
 
-			if (source === "auto") {
-				if (apiKey?.trim()) {
-					const results = await metadataService.searchRAWG(query);
-					if (results.length > 0) {
-						return results;
-					}
-				}
-			}
-
+			// Fall back to Steam
 			return metadataService.searchSteam(query);
 		},
 		metadataSearchSteam: ({ query }: { query: string }) =>
