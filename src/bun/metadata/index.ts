@@ -96,14 +96,14 @@ export function createMetadataService(
 			try {
 				const steamDbResults = await steamDbClient.search(searchQuery);
 				return steamDbResults.map((r) => {
-					// Try library_hero first, fallback to tiny_image capsule
-					const heroImage = `https://cdn.steamstatic.com/steam/apps/${r.id}/library_hero.jpg`;
+					// Use larger capsule image
+					const capsuleImage = `https://cdn.steamstatic.com/steam/apps/${r.id}/capsule_616x353.jpg`;
 					return {
 						id: r.id,
 						name: r.name,
 						slug: "",
 						released: null,
-						background_image: heroImage,
+						background_image: capsuleImage,
 						rating: 0,
 						metacritic: r.metacritic_score ?? null,
 						genres: [],
