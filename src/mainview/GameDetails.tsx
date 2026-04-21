@@ -7,9 +7,10 @@ import { electroview } from "./electroview";
 interface GameDetailsProps {
 	game: Game;
 	onBack: () => void;
+	onGameUpdated?: () => void;
 }
 
-export function GameDetails({ game, onBack }: GameDetailsProps) {
+export function GameDetails({ game, onBack, onGameUpdated }: GameDetailsProps) {
 	const [currentGame, setCurrentGame] = useState(game);
 	const [isConfigOpen, setIsConfigOpen] = useState(false);
 	const [launchStatus, setLaunchStatus] = useState<string | null>(null);
@@ -158,6 +159,7 @@ export function GameDetails({ game, onBack }: GameDetailsProps) {
 				game={currentGame}
 				onSaved={(updated) => {
 					setCurrentGame(updated);
+					onGameUpdated?.();
 				}}
 				onDeleted={() => {
 					onBack();

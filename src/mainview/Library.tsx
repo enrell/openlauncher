@@ -7,11 +7,12 @@ import { electroview } from "./electroview";
 
 interface LibraryProps {
 	onSelectGame: (game: Game) => void;
+	gamesRefresh?: number;
 }
 
 type RunnerFilter = "all" | "umu" | "native";
 
-export function Library({ onSelectGame }: LibraryProps) {
+export function Library({ onSelectGame, gamesRefresh }: LibraryProps) {
 	const [isAddGameOpen, setIsAddGameOpen] = useState(false);
 	const [games, setGames] = useState<Game[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -29,7 +30,7 @@ export function Library({ onSelectGame }: LibraryProps) {
 			.catch(() => {
 				setLoading(false);
 			});
-	}, []);
+	}, [gamesRefresh]);
 
 	const filteredGames = games.filter((game) => {
 		const matchesSearch = game.title

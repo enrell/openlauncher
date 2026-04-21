@@ -59,10 +59,9 @@ const rpc = BrowserView.defineRPC<LauncherRPC>({
 			},
 			fileToDataUrl: async ({ path }) => {
 				try {
-					const file = Bun.file(path);
-					if (!await file.exists()) return null;
-					const contents = await file.arrayBuffer();
-					const base64 = Buffer.from(contents).toString("base64");
+					const { readFile } = await import("fs/promises");
+					const contents = await readFile(path);
+					const base64 = contents.toString("base64");
 					const mimeType = path.endsWith(".png") ? "image/png" : path.endsWith(".jpg") || path.endsWith(".jpeg") ? "image/jpeg" : "image/webp";
 					return `data:${mimeType};base64,${base64}`;
 				} catch {

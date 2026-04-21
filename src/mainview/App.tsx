@@ -13,6 +13,7 @@ function App() {
 		"LIBRARY" | "STORE" | "DRIVERS" | "SETTINGS"
 	>("LIBRARY");
 	const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+	const [gamesRefresh, setGamesRefresh] = useState(0);
 
 	return (
 		<div className="font-body antialiased h-screen overflow-hidden flex relative">
@@ -88,7 +89,10 @@ function App() {
 				<div className="flex-1 relative overflow-hidden flex flex-col">
 					<main className="flex-1 p-4 md:p-8 overflow-y-auto space-y-8 max-w-[1600px] mx-auto w-full">
 						{activeTab === "LIBRARY" && (
-							<Library onSelectGame={setSelectedGame} />
+							<Library
+								gamesRefresh={gamesRefresh}
+								onSelectGame={setSelectedGame}
+							/>
 						)}
 						{activeTab === "STORE" && <Store />}
 						{activeTab === "DRIVERS" && <Drivers />}
@@ -100,6 +104,7 @@ function App() {
 							<GameDetails
 								game={selectedGame}
 								onBack={() => setSelectedGame(null)}
+								onGameUpdated={() => setGamesRefresh(k => k + 1)}
 							/>
 						)}
 					</AnimatePresence>
