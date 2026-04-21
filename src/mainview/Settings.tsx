@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "./components/Button";
-import { RangeSlider, Select, TextInput, Toggle } from "./components/Forms";
+import { RangeSlider, Select, Toggle } from "./components/Forms";
 import { Panel, SettingRow } from "./components/Panels";
 import { SectionHeader } from "./components/SectionHeader";
 import { electroview } from "./electroview";
@@ -9,13 +9,20 @@ const RAWG_API_KEY_SECRET = "rawg-api-key";
 
 type MetadataSource = "rawg" | "steam" | "auto";
 
+function tryDeobfuscate(str: string): string {
+	try {
+		return atob(str);
+	} catch {
+		return str;
+	}
+}
+
 export function Settings() {
 	const [rawgKey, setRawgKey] = useState("");
 	const [rawgKeyStatus, setRawgKeyStatus] = useState<
 		"loading" | "configured" | "missing"
 	>("loading");
 	const [showKey, setShowKey] = useState(false);
-	const [isEditingKey, setIsEditingKey] = useState(false);
 	const [metadataSource, setMetadataSource] = useState<MetadataSource>("auto");
 	const [saving, setSaving] = useState(false);
 	const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -26,7 +33,7 @@ export function Settings() {
 				key: RAWG_API_KEY_SECRET,
 			});
 			if (key) {
-				setRawgKey(key);
+				setRawgKey(tryDeobfuscate(key));
 				setRawgKeyStatus("configured");
 			} else {
 				setRawgKey("");
@@ -55,17 +62,13 @@ export function Settings() {
 		setSaving(true);
 		setSaveMsg(null);
 		try {
-			let keyToSave = rawgKey;
-			if (isEditingKey || rawgKeyStatus !== "configured") {
-				keyToSave = btoa(rawgKey.trim());
-			}
+			const obfuscated = btoa(rawgKey.trim());
 			await electroview.rpc.request.credentialStore({
 				key: RAWG_API_KEY_SECRET,
-				value: keyToSave,
+				value: obfuscated,
 			});
-			setRawgKey(keyToSave);
+			setRawgKey(tryDeobfuscate(obfuscated));
 			setRawgKeyStatus("configured");
-			setIsEditingKey(false);
 			setShowKey(false);
 			setSaveMsg("API key saved");
 		} catch (err) {
@@ -105,6 +108,11 @@ export function Settings() {
 		}
 	};
 
+	const displayValue =
+		rawgKeyStatus === "configured" && !showKey
+			? "•".repeat(Math.min(rawgKey.length, 24))
+			: rawgKey;
+
 	return (
 		<>
 			<SectionHeader
@@ -143,37 +151,24 @@ export function Settings() {
 							isColumn
 						>
 							<div className="w-full space-y-3">
-								<div className="flex gap-2">
-									<TextInput
+								<div className="flex gap-2 w-full">
+									<input
+										type={showKey ? "text" : "password"}
+										value={displayValue}
+										onChange={(e) => setRawgKey(e.target.value)}
 										placeholder="Paste your RAWG API key here..."
-										value={
-											rawgKeyStatus === "configured" &&
-											!showKey &&
-											!isEditingKey
-												? "••••••••••••"
-												: rawgKey
-										}
-										onChange={(e) => {
-											setRawgKey(e.target.value);
-											setIsEditingKey(true);
-										}}
-										onFocus={() => setIsEditingKey(true)}
-										className="flex-1 !py-2.5 font-mono text-xs"
+										className="flex-1 !py-2.5 px-3 bg-surface-container-high border border-outline-variant/50 rounded font-mono text-xs text-on-surface placeholder:text-outline-variant focus:border-primary focus:outline-none transition-colors"
 									/>
-									{rawgKeyStatus === "configured" && (
-										<button
-											type="button"
-											onClick={() => {
-												setShowKey(!showKey);
-												setIsEditingKey(false);
-											}}
-											className="shatter-clip bg-surface-container-high hover:bg-surface-variant border border-outline-variant/50 px-3 flex items-center justify-center transition-colors"
-										>
-											<span className="material-symbols-outlined text-xl text-secondary">
-												{showKey ? "visibility_off" : "visibility"}
-											</span>
-										</button>
-									)}
+									<button
+										type="button"
+										onClick={() => setShowKey(!showKey)}
+										className="shatter-clip bg-surface-container-high hover:bg-surface-variant border border-outline-variant/50 px-4 flex items-center justify-center transition-colors shrink-0"
+										title={showKey ? "Hide key" : "Show key"}
+									>
+										<span className="material-symbols-outlined text-xl text-secondary">
+											{showKey ? "visibility_off" : "visibility"}
+										</span>
+									</button>
 								</div>
 								<div className="flex items-center gap-3">
 									<Button
