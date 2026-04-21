@@ -61,23 +61,26 @@ export function AddGameModal({
 	};
 
 	const handleRunInstaller = async () => {
-		if (!title.trim()) {
-			setError("Game title is required");
-			return;
-		}
-		if (!executable.trim()) {
-			setError("Executable path is required");
-			return;
-		}
-
-		setRunningInstaller(true);
 		setError(null);
 		try {
+			// Open file browser to select installer exe
+			const selected = await electroview.rpc.request.openFileDialog();
+			if (!selected) {
+				return; // User cancelled
+			}
+
+			setRunningInstaller(true);
+			setError(null);
+
+			// Run the selected exe with umu
 			await electroview.rpc.request.runInstaller({
-				path: executable.trim(),
+				path: selected,
 				runner,
 				args: args.trim() || undefined,
 			});
+
+			// After installer finishes, pre-fill the executable path
+			setExecutable(selected);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to run installer");
 		} finally {
