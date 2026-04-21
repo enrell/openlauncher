@@ -4,7 +4,7 @@ import { obfuscate, tryDeobfuscate } from "../credentials/obfuscate";
 import type { MetadataService } from "../metadata";
 
 type MetadataGetSteamDetailsParams =
-	LauncherRPC["bun"]["requests"]["metadataGetSteamDetails"]["params"];
+	LauncherRPC["bun"]["requests"]["metadataGetDetails"]["params"];
 
 const RAWG_API_KEY_SECRET = "rawg-api-key";
 const METADATA_SOURCE_SECRET = "metadata-source";
@@ -15,22 +15,17 @@ export function createMetadataRequestHandlers(
 	return {
 		metadataSearch: async ({ query }: { query: string }) => {
 			const source = await getMetadataSource();
-			const apiKey = await getRawgApiKey();
+			const rawgKey = await getRawgApiKey();
 
-			if (source === "steam") {
-				return metadataService.searchSteam(query);
-			}
-
-			// Try RAWG if configured
-			if ((source === "rawg" || source === "auto") && apiKey?.trim()) {
-				const results = await metadataService.searchRAWG(query);
-				// Only use RAWG results if they have at least one with a valid image
-				if (results.length > 0 && results.some((r) => r.background_image)) {
-					return results;
+			if (source === "rawg" || source === "auto") {
+				if (rawgKey?.trim()) {
+					const results = await metadataService.searchRAWG(query);
+					if (results.length > 0) {
+						return results;
+					}
 				}
 			}
 
-			// Fall back to Steam
 			return metadataService.searchSteam(query);
 		},
 		metadataSearchSteam: ({ query }: { query: string }) =>
@@ -42,7 +37,7 @@ export function createMetadataRequestHandlers(
 			rawgId: number;
 			refresh?: boolean;
 		}) => metadataService.getGameDetails(rawgId, { refresh }),
-		metadataGetSteamDetails: ({ appId }: MetadataGetSteamDetailsParams) =>
+		metadataGetSteamDetails: ({ appId }: { appId: number }) =>
 			metadataService.getSteamDetails(appId),
 		metadataSourceGet: async () => {
 			const source = await getSecret(METADATA_SOURCE_SECRET);
