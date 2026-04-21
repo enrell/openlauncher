@@ -10,11 +10,16 @@ interface GameDetailsProps {
 }
 
 export function GameDetails({ game, onBack }: GameDetailsProps) {
+	const [currentGame, setCurrentGame] = useState(game);
 	const [isConfigOpen, setIsConfigOpen] = useState(false);
 	const [launchStatus, setLaunchStatus] = useState<string | null>(null);
 	const bgUrl =
-		game.coverImage ||
+		currentGame.coverImage ||
 		"https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=2850&q=80";
+
+	useEffect(() => {
+		setCurrentGame(game);
+	}, [game]);
 
 	useEffect(() => {
 		const handler = (payload: {
@@ -150,10 +155,12 @@ export function GameDetails({ game, onBack }: GameDetailsProps) {
 			<GameConfigModal
 				isOpen={isConfigOpen}
 				onClose={() => setIsConfigOpen(false)}
-				game={game}
+				game={currentGame}
 				onSaved={(updated) => {
-					// Could trigger a refresh or state update here if needed
-					void updated;
+					setCurrentGame(updated);
+				}}
+				onDeleted={() => {
+					onBack();
 				}}
 			/>
 		</>
