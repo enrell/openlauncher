@@ -39,10 +39,10 @@ export function Settings() {
 		setSaving(true);
 		setSaveMsg(null);
 		try {
-			await electroview.rpc.request.credentialStore(
-				RAWG_API_KEY_SECRET,
-				rawgKey.trim(),
-			);
+			await electroview.rpc.request.credentialStore({
+				key: RAWG_API_KEY_SECRET,
+				value: rawgKey.trim(),
+			});
 			setRawgKeyStatus("configured");
 			setSaveMsg("API key saved successfully");
 		} catch (err) {
@@ -58,7 +58,9 @@ export function Settings() {
 		setSaving(true);
 		setSaveMsg(null);
 		try {
-			await electroview.rpc.request.credentialDelete(RAWG_API_KEY_SECRET);
+			await electroview.rpc.request.credentialDelete({
+				key: RAWG_API_KEY_SECRET,
+			});
 			setRawgKey("");
 			setRawgKeyStatus("missing");
 			setSaveMsg("API key removed");
