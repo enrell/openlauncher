@@ -14,6 +14,8 @@ export function Settings() {
 	const [rawgKeyStatus, setRawgKeyStatus] = useState<
 		"loading" | "configured" | "missing"
 	>("loading");
+	const [showKey, setShowKey] = useState(false);
+	const [isEditingKey, setIsEditingKey] = useState(false);
 	const [metadataSource, setMetadataSource] = useState<MetadataSource>("auto");
 	const [saving, setSaving] = useState(false);
 	const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -53,14 +55,19 @@ export function Settings() {
 		setSaving(true);
 		setSaveMsg(null);
 		try {
-			const obfuscated = btoa(rawgKey.trim());
+			let keyToSave = rawgKey;
+			if (isEditingKey || rawgKeyStatus !== "configured") {
+				keyToSave = btoa(rawgKey.trim());
+			}
 			await electroview.rpc.request.credentialStore({
 				key: RAWG_API_KEY_SECRET,
-				value: obfuscated,
+				value: keyToSave,
 			});
-			setRawgKey(obfuscated);
+			setRawgKey(keyToSave);
 			setRawgKeyStatus("configured");
-			setSaveMsg("API key saved (obfuscated)");
+			setIsEditingKey(false);
+			setShowKey(false);
+			setSaveMsg("API key saved");
 		} catch (err) {
 			setSaveMsg(
 				`Failed to save: ${err instanceof Error ? err.message : String(err)}`,
@@ -136,14 +143,38 @@ export function Settings() {
 							isColumn
 						>
 							<div className="w-full space-y-3">
-								<TextInput
-									placeholder="Paste your RAWG API key here..."
-									value={
-										rawgKeyStatus === "configured" ? "••••••••••••" : rawgKey
-									}
-									onChange={(e) => setRawgKey(e.target.value)}
-									className="!py-2.5 font-mono text-xs"
-								/>
+								<div className="flex gap-2">
+									<TextInput
+										placeholder="Paste your RAWG API key here..."
+										value={
+											rawgKeyStatus === "configured" &&
+											!showKey &&
+											!isEditingKey
+												? "••••••••••••"
+												: rawgKey
+										}
+										onChange={(e) => {
+											setRawgKey(e.target.value);
+											setIsEditingKey(true);
+										}}
+										onFocus={() => setIsEditingKey(true)}
+										className="flex-1 !py-2.5 font-mono text-xs"
+									/>
+									{rawgKeyStatus === "configured" && (
+										<button
+											type="button"
+											onClick={() => {
+												setShowKey(!showKey);
+												setIsEditingKey(false);
+											}}
+											className="shatter-clip bg-surface-container-high hover:bg-surface-variant border border-outline-variant/50 px-3 flex items-center justify-center transition-colors"
+										>
+											<span className="material-symbols-outlined text-xl text-secondary">
+												{showKey ? "visibility_off" : "visibility"}
+											</span>
+										</button>
+									)}
+								</div>
 								<div className="flex items-center gap-3">
 									<Button
 										variant="primary"
