@@ -49,6 +49,40 @@ export function createLaunchRequestHandlers(
 
 			return result;
 		},
+		runInstaller: async ({
+			path,
+			runner,
+			args,
+		}: {
+			path: string;
+			runner: "native" | "umu";
+			args?: string;
+		}): Promise<LaunchResult> => {
+			notifyStarted(notifications, {
+				gameId: "",
+				title: "Installer",
+			});
+
+			const result = await execute(
+				{
+					id: "",
+					title: "Installer",
+					runner,
+					path,
+					args,
+				},
+				{},
+			);
+
+			notifyEnded(notifications, {
+				gameId: "",
+				title: "Installer",
+				exitCode: result.exitCode,
+				durationMs: result.durationMs,
+			});
+
+			return result;
+		},
 	};
 }
 

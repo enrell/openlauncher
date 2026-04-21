@@ -18,6 +18,14 @@ export type LauncherRPC = {
 				params: { id: string; options?: Partial<LaunchOptions> };
 				response: LaunchResult;
 			};
+			runInstaller: {
+				params: {
+					path: string;
+					runner: "native" | "umu";
+					args?: string;
+				};
+				response: LaunchResult;
+			};
 			credentialStore: {
 				params: { key: string; value: string };
 				response: boolean;
