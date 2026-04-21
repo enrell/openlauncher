@@ -148,7 +148,7 @@ export function GameConfigModal({
 	const tabs: { id: Tab; label: string; icon: string }[] = [
 		{ id: "runtime", label: "Runtime", icon: "build_circle" },
 		...(game.runner === "umu"
-			? [{ id: "umu" as Tab, label: "umu", icon: "sports_esports" }]
+			? [{ id: "umu" as Tab, label: "UMU", icon: "sports_esports" }]
 			: []),
 		{ id: "env", label: "Env Vars", icon: "terminal" },
 		{ id: "info", label: "Info", icon: "info" },
@@ -470,7 +470,7 @@ export function GameConfigModal({
 										<span className="font-mono text-[10px] text-outline-variant block mb-1">
 											EXECUTABLE
 										</span>
-										<div className="bg-surface-container-lowest border border-outline-variant/20 p-3 font-mono text-[10px] text-outline-variant break-all">
+										<div className="bg-surface-container-lowest border border-outline-variant/20 p-4 font-mono text-xs text-outline break-all leading-relaxed">
 											{game.path}
 										</div>
 									</div>
@@ -479,11 +479,13 @@ export function GameConfigModal({
 											<span className="font-mono text-[10px] text-outline-variant block mb-1">
 												COVER
 											</span>
-											<img
-												src={game.coverImage}
-												alt={game.title}
-												className="h-20 object-contain bg-surface-dim rounded border border-outline-variant/20"
-											/>
+											<div className="w-20 h-28 bg-surface-dim rounded border border-outline-variant/20 overflow-hidden">
+												<img
+													src={game.coverImage}
+													alt={game.title}
+													className="w-full h-full object-cover"
+												/>
+											</div>
 										</div>
 									)}
 								</Panel>
