@@ -4,7 +4,9 @@ import type { LauncherRPC } from "../shared/rpc";
 // Create the typed RPC instance for communicating with the main process
 // The handlers.requests are empty because the renderer doesn't handle requests from main
 // The handlers.messages are empty because we use addMessageListener directly
+// Use 30 second timeout for file dialogs and long-running operations
 const rpcInstance = Electroview.defineRPC<LauncherRPC>({
+	maxRequestTime: 30_000,
 	handlers: {
 		requests: {},
 		messages: {},
