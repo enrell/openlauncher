@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Game } from "../../shared/types/game";
+import { electroview } from "../electroview";
 import { Button } from "./Button";
 import { Select, TextInput, Toggle } from "./Forms";
 import { Panel, SettingRow } from "./Panels";
@@ -7,18 +9,64 @@ import { Panel, SettingRow } from "./Panels";
 interface GameConfigModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	gameTitle: string;
+	game: Game;
+	onSaved?: (game: Game) => void;
 }
 
 export function GameConfigModal({
 	isOpen,
 	onClose,
-	gameTitle,
+	game,
+	onSaved,
 }: GameConfigModalProps) {
-	const [useProton, setUseProton] = useState(true);
-	const [useGamescope, setUseGamescope] = useState(false);
-	const [useMangoHud, setUseMangoHud] = useState(false);
-	const [launchArgs, setLaunchArgs] = useState("gamemoderun %command%");
+	const [useGamescope, setUseGamescope] = useState(
+		game.hooks?.gamescope ?? false,
+	);
+	const [useMangoHud, setUseMangoHud] = useState(game.hooks?.mangohud ?? false);
+	const [gamescopeResolution, setGamescopeResolution] = useState("1920x1080");
+	const [gamescopeUpscaling, setGamescopeUpscaling] = useState<
+		"none" | "fsr" | "nis"
+	>("none");
+	const [launchArgs, setLaunchArgs] = useState(game.args ?? "");
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (isOpen) {
+			setUseGamescope(game.hooks?.gamescope ?? false);
+			setUseMangoHud(game.hooks?.mangohud ?? false);
+			setLaunchArgs(game.args ?? "");
+			setError(null);
+		}
+	}, [isOpen, game]);
+
+	const handleSave = async () => {
+		setSubmitting(true);
+		setError(null);
+		try {
+			const patch = {
+				hooks: {
+					gamescope: useGamescope,
+					mangohud: useMangoHud,
+				},
+				args: launchArgs || undefined,
+			};
+			const updated = await electroview.rpc.request.gameUpdate({
+				id: game.id,
+				patch,
+			});
+			if (updated) {
+				onSaved?.(updated);
+			}
+			onClose();
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "Failed to save configuration",
+			);
+		} finally {
+			setSubmitting(false);
+		}
+	};
 
 	return (
 		<AnimatePresence>
@@ -52,7 +100,7 @@ export function GameConfigModal({
 										Configuration
 									</h2>
 									<p className="font-mono text-xs text-outline-variant">
-										{gameTitle}
+										{game.title}
 									</p>
 								</div>
 							</div>
@@ -66,52 +114,6 @@ export function GameConfigModal({
 
 						{/* Body */}
 						<div className="relative z-20 flex-1 overflow-y-auto p-6 space-y-6">
-							<Panel
-								title="Compatibility Layer"
-								icon="layers"
-								iconColor="text-secondary"
-								className="!p-5"
-							>
-								<SettingRow
-									title="Force specific Steam Play compatibility tool"
-									description="Run this game using Proton instead of Linux native runtime"
-								>
-									<Toggle
-										checked={useProton}
-										onChange={() => setUseProton(!useProton)}
-										variant="primary"
-									/>
-								</SettingRow>
-
-								{useProton && (
-									<motion.div
-										initial={{ opacity: 0, height: 0 }}
-										animate={{ opacity: 1, height: "auto" }}
-										className="pt-2"
-									>
-										<SettingRow
-											title="Proton Version"
-											description="Select the community or official runner"
-											borderColor="border-secondary/30"
-										>
-											<Select
-												options={[
-													{
-														value: "ge-8-25",
-														label: "GE-Proton8-25 (Default)",
-													},
-													{
-														value: "experimental",
-														label: "Proton Experimental",
-													},
-													{ value: "hotfix", label: "Proton Hotfix" },
-												]}
-											/>
-										</SettingRow>
-									</motion.div>
-								)}
-							</Panel>
-
 							<Panel
 								title="Runtime Environment"
 								icon="build_circle"
@@ -141,8 +143,11 @@ export function GameConfigModal({
 													RESOLUTION (W x H)
 												</label>
 												<TextInput
+													value={gamescopeResolution}
+													onChange={(e) =>
+														setGamescopeResolution(e.target.value)
+													}
 													placeholder="e.g. 1920x1080"
-													defaultValue="1920x1080"
 													className="!py-1.5"
 												/>
 											</div>
@@ -151,6 +156,12 @@ export function GameConfigModal({
 													UPSCALING
 												</label>
 												<Select
+													value={gamescopeUpscaling}
+													onChange={(e) =>
+														setGamescopeUpscaling(
+															e.target.value as "none" | "fsr" | "nis",
+														)
+													}
 													options={[
 														{ value: "none", label: "None" },
 														{ value: "fsr", label: "AMD FSR" },
@@ -202,8 +213,7 @@ export function GameConfigModal({
 									EXECUTABLE PATH
 								</span>
 								<div className="bg-surface-container-lowest border border-outline-variant/20 p-2 font-mono text-[10px] text-outline-variant truncate select-all">
-									/home/user/.steam/steam/steamapps/common/
-									{gameTitle.replace(/\s+/g, "")}/game.exe
+									{game.path}
 								</div>
 							</div>
 						</div>
@@ -217,10 +227,22 @@ export function GameConfigModal({
 							>
 								Cancel
 							</Button>
-							<Button variant="primary" onClick={onClose}>
-								Save Configuration
+							<Button
+								variant="primary"
+								onClick={handleSave}
+								disabled={submitting}
+							>
+								{submitting ? "Saving..." : "Save Configuration"}
 							</Button>
 						</div>
+
+						{error && (
+							<div className="relative z-20 px-6 pb-4">
+								<div className="font-mono text-xs text-error bg-error/10 border border-error/30 p-3">
+									{error}
+								</div>
+							</div>
+						)}
 					</motion.div>
 				</div>
 			)}

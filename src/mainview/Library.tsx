@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import type { Game } from "../../shared/types/game";
+import type { Game } from "../shared/types/game";
 import { AddGameModal } from "./components/AddGameModal";
 import { AddGameCard, GameCard } from "./components/GameCard";
 import { SectionHeader } from "./components/SectionHeader";
+import { electroview } from "./electroview";
 
 interface LibraryProps {
 	onSelectGame: (game: Game) => void;

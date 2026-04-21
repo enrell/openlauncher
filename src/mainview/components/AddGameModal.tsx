@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import type { Runner } from "../../shared/types/game";
+import { electroview } from "../electroview";
 import { Button } from "./Button";
 import { Select, TextInput } from "./Forms";
 
@@ -30,7 +31,7 @@ export function AddGameModal({
 		setSubmitting(true);
 		setError(null);
 		try {
-			await electroview.rpc?.request.gameCreate({
+			await electroview.rpc.request.gameCreate({
 				title: title.trim(),
 				runner: layer as Runner,
 				path: path.trim(),
@@ -123,7 +124,7 @@ export function AddGameModal({
 										type="button"
 										onClick={async () => {
 											const selectedPath =
-												await electroview.rpc?.request.openFileDialog();
+												await electroview.rpc.request.openFileDialog();
 											if (selectedPath) {
 												setPath(selectedPath);
 											}

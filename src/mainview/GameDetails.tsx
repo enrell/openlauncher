@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { Game } from "../shared/types/game";
 import { GameConfigModal } from "./components/GameConfigModal";
+import { electroview } from "./electroview";
 
 interface GameDetailsProps {
 	game: Game;
@@ -31,9 +32,9 @@ export function GameDetails({ game, onBack }: GameDetailsProps) {
 				setTimeout(() => setLaunchStatus(null), 5000);
 			}
 		};
-		electroview.rpc.on("gameLaunchEnded", handler);
+		electroview.rpc.addMessageListener("gameLaunchEnded", handler);
 		return () => {
-			electroview.rpc.off("gameLaunchEnded", handler);
+			electroview.rpc.removeMessageListener("gameLaunchEnded", handler);
 		};
 	}, [game.id]);
 
@@ -149,7 +150,11 @@ export function GameDetails({ game, onBack }: GameDetailsProps) {
 			<GameConfigModal
 				isOpen={isConfigOpen}
 				onClose={() => setIsConfigOpen(false)}
-				gameTitle={game.title}
+				game={game}
+				onSaved={(updated) => {
+					// Could trigger a refresh or state update here if needed
+					void updated;
+				}}
 			/>
 		</>
 	);

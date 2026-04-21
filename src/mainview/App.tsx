@@ -1,5 +1,6 @@
 import { AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import type { Game } from "../shared/types/game";
 import { NavItem } from "./components/Navigation";
 import { Drivers } from "./Drivers";
 import { GameDetails } from "./GameDetails";
@@ -11,9 +12,7 @@ function App() {
 	const [activeTab, setActiveTab] = useState<
 		"LIBRARY" | "STORE" | "DRIVERS" | "SETTINGS"
 	>("LIBRARY");
-	const [selectedGame, setSelectedGame] = useState<{ title: string } | null>(
-		null,
-	);
+	const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
 	return (
 		<div className="font-body antialiased h-screen overflow-hidden flex relative">
