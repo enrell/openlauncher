@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import type { Game } from "../../shared/types/game";
+import type { Game, GamePatch } from "../../shared/types/game";
 import { electroview } from "../electroview";
 import { Button } from "./Button";
 import { Select, TextInput, Toggle } from "./Forms";
@@ -45,6 +45,8 @@ export function GameConfigModal({
 	const [submitting, setSubmitting] = useState(false);
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [coverSearchResults, setCoverSearchResults] = useState<string[]>([]);
+	const [searchingCover, setSearchingCover] = useState(false);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -61,6 +63,7 @@ export function GameConfigModal({
 			setEnvVars(Object.entries(env).map(([key, value]) => ({ key, value })));
 			setError(null);
 			setShowDeleteConfirm(false);
+			setCoverSearchResults([]);
 		}
 	}, [isOpen, game]);
 
@@ -85,6 +88,24 @@ export function GameConfigModal({
 		}
 	};
 
+	const handleSearchCover = async () => {
+		if (!title.trim()) return;
+		setSearchingCover(true);
+		try {
+			const results = await electroview.rpc.request.metadataSearch({
+				query: title.trim(),
+			});
+			const urls = results
+				.map((r) => r.background_image)
+				.filter((url): url is string => Boolean(url));
+			setCoverSearchResults(urls);
+		} catch {
+			setCoverSearchResults([]);
+		} finally {
+			setSearchingCover(false);
+		}
+	};
+
 	const handleSave = async () => {
 		setSubmitting(true);
 		setError(null);
@@ -96,7 +117,7 @@ export function GameConfigModal({
 				}
 			}
 
-			const patch: Parameters<typeof electroview.rpc.request.gameUpdate>[0]["patch"] = {
+			const patch: GamePatch = {
 				title: title.trim() || game.title,
 				path: executable.trim() || game.path,
 				cwd: cwd.trim() || undefined,
@@ -197,7 +218,7 @@ export function GameConfigModal({
 							</div>
 							<button
 								onClick={onClose}
-								className="w-8 h-8 flex items-center justify-center text-outline-variant hover:text-white hover:bg-error/20 hover:border-error/50 transition-colors shatter-clip-reverse"
+								className="w-8 h-8 flex items-center justify-center text-outline-variant hover:text-white hover:bg-error/20 transition-colors shatter-clip-reverse"
 							>
 								<span className="material-symbols-outlined">close</span>
 							</button>
@@ -205,43 +226,76 @@ export function GameConfigModal({
 
 						{/* Body */}
 						<div className="relative z-20 flex-1 overflow-y-auto px-6 py-5 space-y-5">
-							{/* Title & Cover Row */}
-							<div className="flex gap-4">
-								<div className="flex-1 space-y-3">
-									<div>
-										<label className="font-mono text-[10px] text-outline-variant block mb-1">
-											TITLE
-										</label>
-										<TextInput
-											value={title}
-											onChange={(e) => setTitle(e.target.value)}
-											placeholder="Game title"
-											className="!py-2"
-										/>
-									</div>
-									<div>
-										<label className="font-mono text-[10px] text-outline-variant block mb-1">
-											COVER URL
-										</label>
-										<TextInput
-											value={coverUrl}
-											onChange={(e) => setCoverUrl(e.target.value)}
-											placeholder="https://..."
-											className="!py-2"
-										/>
-									</div>
+							{/* Title */}
+							<div>
+								<label className="font-mono text-[10px] text-outline-variant block mb-1">
+									TITLE
+								</label>
+								<TextInput
+									value={title}
+									onChange={(e) => setTitle(e.target.value)}
+									placeholder="Game title"
+									className="!py-2"
+								/>
+							</div>
+
+							{/* Cover */}
+							<div>
+								<label className="font-mono text-[10px] text-outline-variant block mb-1">
+									COVER URL
+								</label>
+								<div className="flex gap-2">
+									<TextInput
+										value={coverUrl}
+										onChange={(e) => setCoverUrl(e.target.value)}
+										placeholder="https://..."
+										className="flex-1 !py-2"
+									/>
+									<Button
+										variant="ghost"
+										onClick={handleSearchCover}
+										disabled={searchingCover || !title.trim()}
+										className="!px-3"
+										title="Search cover"
+									>
+										<span className="material-symbols-outlined text-lg">
+											image_search
+										</span>
+									</Button>
 								</div>
 								{coverUrl && (
-									<div className="shrink-0">
-										<div className="w-20 h-28 bg-surface-dim rounded border border-outline-variant/20 overflow-hidden">
-											<img
-												src={coverUrl}
-												alt="cover"
-												className="w-full h-full object-cover"
-												onError={() => setCoverUrl("")}
-											/>
+									<div className="mt-2 w-20 h-28 bg-surface-dim rounded border border-outline-variant/20 overflow-hidden">
+										<img
+											src={coverUrl}
+											alt="cover"
+											className="w-full h-full object-cover"
+											onError={() => setCoverUrl("")}
+										/>
+									</div>
+								)}
+								{coverSearchResults.length > 0 && (
+									<div className="mt-3">
+										<label className="font-mono text-[10px] text-outline-variant block mb-2">
+											SELECT COVER
+										</label>
+										<div className="flex gap-2 overflow-x-auto pb-2">
+											{coverSearchResults.slice(0, 8).map((url, i) => (
+												<button
+													key={i}
+													onClick={() => {
+														setCoverUrl(url);
+														setCoverSearchResults([]);
+													}}
+													className={`shrink-0 w-14 h-20 rounded border-2 transition-colors overflow-hidden ${coverUrl === url ? "border-primary" : "border-outline-variant/30 hover:border-primary/50"}`}
+												>
+													<img src={url} alt="" className="w-full h-full object-cover" onError={() => {}} />
+												</button>
+											))}
 										</div>
 									</div>
+								)}
+								{searchingCover && (
+									<p className="font-mono text-[10px] text-outline-variant mt-2">Searching...</p>
 								)}
 							</div>
 
@@ -263,9 +317,7 @@ export function GameConfigModal({
 										className="!px-3"
 										title="Browse"
 									>
-										<span className="material-symbols-outlined text-lg">
-											folder_open
-										</span>
+										<span className="material-symbols-outlined text-lg">folder_open</span>
 									</Button>
 								</div>
 							</div>
@@ -288,9 +340,7 @@ export function GameConfigModal({
 										className="!px-3"
 										title="Browse"
 									>
-										<span className="material-symbols-outlined text-lg">
-											folder_open
-										</span>
+										<span className="material-symbols-outlined text-lg">folder_open</span>
 									</Button>
 								</div>
 							</div>
@@ -310,12 +360,7 @@ export function GameConfigModal({
 
 							{/* umu Settings */}
 							{game.runner === "umu" && (
-								<Panel
-									title="umu Settings"
-									icon="sports_esports"
-									iconColor="text-primary"
-									className="!p-4"
-								>
+								<Panel title="umu Settings" icon="sports_esports" iconColor="text-primary" className="!p-4">
 									<div className="space-y-3">
 										<div>
 											<label className="font-mono text-[10px] text-outline-variant block mb-1">
@@ -328,15 +373,8 @@ export function GameConfigModal({
 													placeholder="~/.wine (auto-generated if empty)"
 													className="flex-1 !py-2 font-mono"
 												/>
-												<Button
-													variant="ghost"
-													onClick={handleBrowseWinePrefix}
-													className="!px-3"
-													title="Browse"
-												>
-													<span className="material-symbols-outlined text-lg">
-														folder_open
-													</span>
+												<Button variant="ghost" onClick={handleBrowseWinePrefix} className="!px-3" title="Browse">
+													<span className="material-symbols-outlined text-lg">folder_open</span>
 												</Button>
 											</div>
 										</div>
@@ -356,59 +394,32 @@ export function GameConfigModal({
 							)}
 
 							{/* Runtime Hooks */}
-							<Panel
-								title="Runtime Overlays"
-								icon="build_circle"
-								iconColor="text-tertiary"
-								className="!p-4"
-							>
+							<Panel title="Runtime Overlays" icon="build_circle" iconColor="text-tertiary" className="!p-4">
 								<div className="space-y-3">
-									<SettingRow
-										title="MangoHud"
-										description="Show performance overlay during gameplay"
-									>
-										<Toggle
-											checked={useMangoHud}
-											onChange={() => setUseMangoHud(!useMangoHud)}
-										/>
+									<SettingRow title="MangoHud" description="Show performance overlay during gameplay">
+										<Toggle checked={useMangoHud} onChange={() => setUseMangoHud(!useMangoHud)} />
 									</SettingRow>
 
-									<SettingRow
-										title="Gamescope"
-										description="Wrap in Gamescope micro-compositor"
-									>
-										<Toggle
-											checked={useGamescope}
-											onChange={() => setUseGamescope(!useGamescope)}
-										/>
+									<SettingRow title="Gamescope" description="Wrap in Gamescope micro-compositor">
+										<Toggle checked={useGamescope} onChange={() => setUseGamescope(!useGamescope)} />
 									</SettingRow>
 
 									{useGamescope && (
 										<div className="grid grid-cols-2 gap-3 pt-2 pl-4 border-l border-outline-variant/20">
 											<div>
-												<label className="font-mono text-[10px] text-outline-variant block mb-1">
-													RESOLUTION
-												</label>
+												<label className="font-mono text-[10px] text-outline-variant block mb-1">RESOLUTION</label>
 												<TextInput
 													value={gamescopeResolution}
-													onChange={(e) =>
-														setGamescopeResolution(e.target.value)
-													}
+													onChange={(e) => setGamescopeResolution(e.target.value)}
 													placeholder="1920x1080"
 													className="!py-1.5 font-mono"
 												/>
 											</div>
 											<div>
-												<label className="font-mono text-[10px] text-outline-variant block mb-1">
-													UPSCALING
-												</label>
+												<label className="font-mono text-[10px] text-outline-variant block mb-1">UPSCALING</label>
 												<Select
 													value={gamescopeUpscaling}
-													onChange={(e) =>
-														setGamescopeUpscaling(
-															e.target.value as "none" | "fsr" | "nis",
-														)
-													}
+													onChange={(e) => setGamescopeUpscaling(e.target.value as "none" | "fsr" | "nis")}
 													options={[
 														{ value: "none", label: "None" },
 														{ value: "fsr", label: "AMD FSR" },
@@ -423,47 +434,29 @@ export function GameConfigModal({
 							</Panel>
 
 							{/* Environment Variables */}
-							<Panel
-								title="Environment Variables"
-								icon="terminal"
-								iconColor="text-secondary"
-								className="!p-4"
-							>
+							<Panel title="Environment Variables" icon="terminal" iconColor="text-secondary" className="!p-4">
 								<div className="space-y-2">
 									{envVars.map((envVar, index) => (
 										<div key={index} className="flex gap-2 items-center">
 											<TextInput
 												value={envVar.key}
-												onChange={(e) =>
-													updateEnvVar(index, "key", e.target.value)
-												}
+												onChange={(e) => updateEnvVar(index, "key", e.target.value)}
 												placeholder="VAR_NAME"
 												className="font-mono !py-1.5 flex-1"
 											/>
 											<TextInput
 												value={envVar.value}
-												onChange={(e) =>
-													updateEnvVar(index, "value", e.target.value)
-												}
+												onChange={(e) => updateEnvVar(index, "value", e.target.value)}
 												placeholder="value"
 												className="font-mono !py-1.5 flex-1"
 											/>
-											<button
-												onClick={() => removeEnvVar(index)}
-												className="text-outline-variant hover:text-error transition-colors shrink-0"
-											>
-												<span className="material-symbols-outlined text-lg">
-													delete
-												</span>
+											<button onClick={() => removeEnvVar(index)} className="text-outline-variant hover:text-error transition-colors shrink-0">
+												<span className="material-symbols-outlined text-lg">delete</span>
 											</button>
 										</div>
 									))}
-									<button
-										onClick={addEnvVar}
-										className="flex items-center gap-2 text-secondary hover:text-secondary/80 font-mono text-xs mt-1 transition-colors"
-									>
-										<span className="material-symbols-outlined text-sm">add</span>
-										ADD VARIABLE
+									<button onClick={addEnvVar} className="flex items-center gap-2 text-secondary hover:text-secondary/80 font-mono text-xs mt-1 transition-colors">
+										<span className="material-symbols-outlined text-sm">add</span> ADD VARIABLE
 									</button>
 								</div>
 							</Panel>
@@ -482,16 +475,8 @@ export function GameConfigModal({
 									</button>
 								) : (
 									<div className="flex items-center gap-3">
-										<span className="font-mono text-xs text-error">
-											Confirm delete?
-										</span>
-										<Button
-											variant="ghost"
-											onClick={() => setShowDeleteConfirm(false)}
-											className="!text-xs"
-										>
-											Cancel
-										</Button>
+										<span className="font-mono text-xs text-error">Confirm delete?</span>
+										<Button variant="ghost" onClick={() => setShowDeleteConfirm(false)} className="!text-xs">Cancel</Button>
 										<Button
 											variant="primary"
 											onClick={handleDelete}
@@ -504,9 +489,7 @@ export function GameConfigModal({
 								)}
 							</div>
 							<div className="flex gap-3">
-								<Button variant="ghost" onClick={onClose}>
-									Cancel
-								</Button>
+								<Button variant="ghost" onClick={onClose}>Cancel</Button>
 								<Button variant="primary" onClick={handleSave} disabled={submitting}>
 									{submitting ? "Saving..." : "Save Changes"}
 								</Button>
@@ -515,9 +498,7 @@ export function GameConfigModal({
 
 						{error && (
 							<div className="relative z-20 px-6 pb-4 shrink-0">
-								<div className="font-mono text-xs text-error bg-error/10 border border-error/30 p-3">
-									{error}
-								</div>
+								<div className="font-mono text-xs text-error bg-error/10 border border-error/30 p-3">{error}</div>
 							</div>
 						)}
 					</motion.div>
