@@ -193,16 +193,6 @@ export function AddGameModal({
 
 						{/* Left Sidebar - Cover Preview */}
 						<div className="w-64 shrink-0 bg-surface-dim border-r border-outline-variant/20 flex flex-col">
-							{/* Close button */}
-							<div className="p-4 flex justify-end">
-								<button
-									onClick={handleClose}
-									className="w-8 h-8 flex items-center justify-center text-outline-variant hover:text-white transition-colors"
-								>
-									<span className="material-symbols-outlined">close</span>
-								</button>
-							</div>
-
 							{/* Cover preview */}
 							<div className="flex-1 flex flex-col items-center justify-center p-6">
 								{coverUrl ? (
@@ -291,6 +281,12 @@ export function AddGameModal({
 										</h2>
 									</div>
 								</div>
+								<button
+									onClick={handleClose}
+									className="w-8 h-8 flex items-center justify-center border border-outline-variant/30 text-outline-variant hover:text-white hover:bg-error/20 hover:border-error/50 transition-colors shatter-clip-reverse"
+								>
+									<span className="material-symbols-outlined">close</span>
+								</button>
 							</div>
 
 							{/* Form */}
