@@ -106,7 +106,7 @@ export function createMetadataService(
 						metacritic: r.metacritic_score ?? null,
 						genres: [],
 						platforms: [
-							...(r.platforms.windows
+							...(r.platforms?.windows
 								? [
 										{
 											platform: { id: 0, name: "Windows", slug: "windows" },
@@ -114,7 +114,7 @@ export function createMetadataService(
 										},
 									]
 								: []),
-							...(r.platforms.mac
+							...(r.platforms?.mac
 								? [
 										{
 											platform: { id: 0, name: "Mac", slug: "mac" },
@@ -122,7 +122,7 @@ export function createMetadataService(
 										},
 									]
 								: []),
-							...(r.platforms.linux
+							...(r.platforms?.linux
 								? [
 										{
 											platform: { id: 0, name: "Linux", slug: "linux" },
