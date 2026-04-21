@@ -3,6 +3,7 @@ import { Badge } from "./Badge";
 interface GameCardProps {
 	title: string;
 	statusText: string;
+	coverImage?: string;
 	badgeVariant?: "ready" | "updating" | "error" | "default";
 	badgeText?: string;
 	isUpdating?: boolean;
@@ -15,6 +16,7 @@ interface GameCardProps {
 export function GameCard({
 	title,
 	statusText,
+	coverImage,
 	badgeVariant,
 	badgeText,
 	isUpdating = false,
@@ -33,9 +35,20 @@ export function GameCard({
 				<div
 					className={`absolute inset-0 bg-surface-dim/80 z-0 flex items-center justify-center ${!disabled && !isUpdating ? "group-hover:scale-105 transition-transform duration-500" : ""} ${disabled ? "grayscale" : ""}`}
 				>
-					<span className="material-symbols-outlined text-6xl text-outline-variant/50">
-						sports_esports
-					</span>
+					{coverImage ? (
+						<img
+							src={coverImage}
+							alt={title}
+							className="absolute inset-0 w-full h-full object-cover"
+							onError={(e) => {
+								(e.currentTarget as HTMLImageElement).style.display = "none";
+							}}
+						/>
+					) : (
+						<span className="material-symbols-outlined text-6xl text-outline-variant/50">
+							sports_esports
+						</span>
+					)}
 				</div>
 
 				{isUpdating && (

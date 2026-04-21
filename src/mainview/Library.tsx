@@ -52,6 +52,7 @@ export function Library({ onSelectGame }: LibraryProps) {
 						<GameCard
 							key={game.id}
 							title={game.title}
+							coverImage={game.coverImage}
 							statusText={game.runner === "umu" ? "UMU RUNNER" : "LINUX NATIVE"}
 							badgeVariant={game.store === "steam" ? "ready" : "default"}
 							badgeText={game.store?.toUpperCase() ?? "MANUAL"}
