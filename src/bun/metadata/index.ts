@@ -96,12 +96,14 @@ export function createMetadataService(
 			try {
 				const steamDbResults = await steamDbClient.search(searchQuery);
 				return steamDbResults.map((r) => {
+					// Use header image from Steam CDN for better quality
+					const headerImage = `https://cdn.steamstatic.com/steam/apps/${r.id}/header.jpg`;
 					return {
 						id: r.id,
 						name: r.name,
 						slug: "",
 						released: null,
-						background_image: r.tiny_image || null,
+						background_image: headerImage,
 						rating: 0,
 						metacritic: r.metacritic_score ?? null,
 						genres: [],
