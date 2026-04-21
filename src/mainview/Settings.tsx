@@ -1,8 +1,76 @@
-import { RangeSlider, Select, Toggle } from "./components/Forms";
+import { useCallback, useEffect, useState } from "react";
+import { Button } from "./components/Button";
+import { RangeSlider, Select, TextInput, Toggle } from "./components/Forms";
 import { Panel, SettingRow } from "./components/Panels";
 import { SectionHeader } from "./components/SectionHeader";
+import { electroview } from "./electroview";
+
+const RAWG_API_KEY_SECRET = "rawg-api-key";
 
 export function Settings() {
+	const [rawgKey, setRawgKey] = useState("");
+	const [rawgKeyStatus, setRawgKeyStatus] = useState<
+		"loading" | "configured" | "missing"
+	>("loading");
+	const [saving, setSaving] = useState(false);
+	const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+	const checkRawgKey = useCallback(async () => {
+		try {
+			const key =
+				await electroview.rpc.request.credentialGet(RAWG_API_KEY_SECRET);
+			if (key) {
+				setRawgKey(key);
+				setRawgKeyStatus("configured");
+			} else {
+				setRawgKey("");
+				setRawgKeyStatus("missing");
+			}
+		} catch {
+			setRawgKeyStatus("missing");
+		}
+	}, []);
+
+	useEffect(() => {
+		checkRawgKey();
+	}, [checkRawgKey]);
+
+	const handleSaveRawgKey = async () => {
+		setSaving(true);
+		setSaveMsg(null);
+		try {
+			await electroview.rpc.request.credentialStore(
+				RAWG_API_KEY_SECRET,
+				rawgKey.trim(),
+			);
+			setRawgKeyStatus("configured");
+			setSaveMsg("API key saved successfully");
+		} catch (err) {
+			setSaveMsg(
+				`Failed to save: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleDeleteRawgKey = async () => {
+		setSaving(true);
+		setSaveMsg(null);
+		try {
+			await electroview.rpc.request.credentialDelete(RAWG_API_KEY_SECRET);
+			setRawgKey("");
+			setRawgKeyStatus("missing");
+			setSaveMsg("API key removed");
+		} catch (err) {
+			setSaveMsg(
+				`Failed to delete: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		} finally {
+			setSaving(false);
+		}
+	};
+
 	return (
 		<>
 			<SectionHeader
@@ -14,6 +82,81 @@ export function Settings() {
 
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
 				<div className="lg:col-span-8 flex flex-col gap-6">
+					{/* Metadata API Settings */}
+					<Panel title="Game Metadata" icon="search">
+						<SettingRow
+							title="RAWG API Key"
+							description="Required for game search and metadata. Get a free key at rawg.io/apidocs"
+							borderColor="border-primary/30"
+							isColumn
+						>
+							<div className="w-full space-y-3">
+								<TextInput
+									placeholder="Paste your RAWG API key here..."
+									value={rawgKey}
+									onChange={(e) => setRawgKey(e.target.value)}
+									className="!py-2.5 font-mono text-xs"
+								/>
+								<div className="flex items-center gap-3">
+									<Button
+										variant="primary"
+										icon="save"
+										onClick={handleSaveRawgKey}
+										disabled={saving || !rawgKey.trim()}
+									>
+										{saving ? "Saving..." : "Save Key"}
+									</Button>
+									{rawgKeyStatus === "configured" && (
+										<Button
+											variant="ghost"
+											onClick={handleDeleteRawgKey}
+											disabled={saving}
+											className="!text-error"
+										>
+											Remove
+										</Button>
+									)}
+									{rawgKeyStatus === "configured" && (
+										<span className="font-mono text-[10px] text-secondary flex items-center gap-1">
+											<span className="material-symbols-outlined text-[14px]">
+												check_circle
+											</span>
+											Configured
+										</span>
+									)}
+								</div>
+								{saveMsg && (
+									<p
+										className={`font-mono text-xs ${saveMsg.includes("Failed") ? "text-error" : "text-secondary"}`}
+									>
+										{saveMsg}
+									</p>
+								)}
+							</div>
+						</SettingRow>
+
+						<div className="mt-4 p-4 bg-surface-dim rounded border border-outline-variant/20">
+							<p className="font-mono text-[10px] text-outline-variant leading-relaxed">
+								<span className="text-secondary font-bold">
+									RAWG Attribution Required:
+								</span>{" "}
+								When displaying game data from RAWG, you must include a visible
+								attribution link to{" "}
+								<a
+									href="https://rawg.io"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-primary underline hover:text-primary/80"
+								>
+									RAWG.io
+								</a>
+								. Free tier: 20,000 requests/month. Data may not be
+								redistributed freely.
+							</p>
+						</div>
+					</Panel>
+
+					{/* General Settings */}
 					<Panel title="General" icon="tune">
 						<SettingRow
 							title="Language"
@@ -44,6 +187,7 @@ export function Settings() {
 						</SettingRow>
 					</Panel>
 
+					{/* Storage & Library */}
 					<Panel
 						title="Storage & Library"
 						icon="folder_special"
