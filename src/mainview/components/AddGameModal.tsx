@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Runner } from "../../shared/types/game";
+import type { RAWGSearchResult } from "../../shared/types/rawg";
 import { electroview } from "../electroview";
 import { Button } from "./Button";
 import { Select, TextInput } from "./Forms";
@@ -28,12 +29,19 @@ export function AddGameModal({
 		"idle" | "running" | "done" | "error"
 	>("idle");
 
+	// Search state
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState<RAWGSearchResult[]>([]);
+	const [searching, setSearching] = useState(false);
+	const [showResults, setShowResults] = useState(false);
+	const searchRef = useRef<HTMLDivElement>(null);
+
 	// Listen for installer launch messages to update UI
 	useEffect(() => {
 		if (!isOpen) return;
 
 		const onStarted = (payload: { gameId: string }) => {
-			if (payload.gameId !== "") return; // Not our installer
+			if (payload.gameId !== "") return;
 			setInstallerStatus("running");
 			setError(null);
 		};
@@ -43,7 +51,7 @@ export function AddGameModal({
 			exitCode: number | null;
 			durationMs: number;
 		}) => {
-			if (payload.gameId !== "") return; // Not our installer
+			if (payload.gameId !== "") return;
 			if (payload.exitCode === 0 || payload.exitCode === null) {
 				setInstallerStatus("done");
 			} else {
@@ -63,9 +71,47 @@ export function AddGameModal({
 		};
 	}, [isOpen]);
 
+	// Close search results when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+				setShowResults(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
+
+	const handleSearch = async () => {
+		if (!searchQuery.trim()) return;
+		setSearching(true);
+		setError(null);
+		setShowResults(true);
+		try {
+			const results = await electroview.rpc.request.metadataSearch(
+				searchQuery.trim(),
+			);
+			setSearchResults(results);
+		} catch (err) {
+			setError(
+				`Search failed: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		} finally {
+			setSearching(false);
+		}
+	};
+
+	const handleSelectResult = (result: RAWGSearchResult) => {
+		setTitle(result.name);
+		setCoverUrl(result.background_image || "");
+		setSearchQuery("");
+		setSearchResults([]);
+		setShowResults(false);
+	};
+
 	const handleBrowseExecutable = async () => {
 		setError(null);
-		setInstallerStatus("idle"); // Reset status when selecting new file
+		setInstallerStatus("idle");
 		try {
 			const selected = await electroview.rpc.request.openFileDialog();
 			if (selected) {
@@ -85,9 +131,7 @@ export function AddGameModal({
 		try {
 			const selected = await electroview.rpc.request.openFileDialog();
 			if (selected) {
-				// For local files, we need to convert to file:// URL
-				// Or just store the path and let the renderer handle it
-				setCoverUrl(selected);
+				setCoverUrl(selected.startsWith("/") ? `file://${selected}` : selected);
 			}
 		} catch (err) {
 			setError(
@@ -101,17 +145,14 @@ export function AddGameModal({
 	const handleRunInstaller = async () => {
 		setError(null);
 		try {
-			// Open file browser to select installer exe
 			const selected = await electroview.rpc.request.openFileDialog();
 			if (!selected) {
-				return; // User cancelled
+				return;
 			}
 
-			// Pre-fill the executable path
 			setExecutable(selected);
 			setInstallerStatus("running");
 
-			// Run the selected exe with umu (fire and forget)
 			await electroview.rpc.request.runInstaller({
 				path: selected,
 				runner,
@@ -143,10 +184,7 @@ export function AddGameModal({
 				coverImage: coverUrl.trim() || undefined,
 				args: args.trim() || undefined,
 			});
-			setTitle("");
-			setCoverUrl("");
-			setExecutable("");
-			setArgs("");
+			resetForm();
 			onGameCreated?.();
 			onClose();
 		} catch (err) {
@@ -156,7 +194,7 @@ export function AddGameModal({
 		}
 	};
 
-	const handleClose = () => {
+	const resetForm = () => {
 		setTitle("");
 		setCoverUrl("");
 		setExecutable("");
@@ -165,6 +203,12 @@ export function AddGameModal({
 		setShowWineSettings(false);
 		setError(null);
 		setInstallerStatus("idle");
+		setSearchQuery("");
+		setSearchResults([]);
+	};
+
+	const handleClose = () => {
+		resetForm();
 		onClose();
 	};
 
@@ -230,12 +274,9 @@ export function AddGameModal({
 												hourglass_top
 											</span>
 											<span className="font-mono text-[10px] text-secondary uppercase">
-												Running Installer...
+												Running...
 											</span>
 										</div>
-										<p className="font-mono text-[9px] text-outline-variant mt-1">
-											Downloading Proton and launching installer
-										</p>
 									</div>
 								)}
 
@@ -246,7 +287,7 @@ export function AddGameModal({
 												check_circle
 											</span>
 											<span className="font-mono text-[10px] text-secondary uppercase">
-												Installation Complete
+												Done
 											</span>
 										</div>
 									</div>
@@ -259,7 +300,7 @@ export function AddGameModal({
 												error
 											</span>
 											<span className="font-mono text-[10px] text-error uppercase">
-												Installer Failed
+												Failed
 											</span>
 										</div>
 									</div>
@@ -291,6 +332,93 @@ export function AddGameModal({
 
 							{/* Form */}
 							<div className="relative z-20 flex-1 overflow-y-auto p-6 space-y-5">
+								{/* Search */}
+								<div className="space-y-1" ref={searchRef}>
+									<label className="font-mono text-[10px] text-outline-variant block uppercase">
+										Search Game Metadata
+									</label>
+									<div className="flex gap-2">
+										<TextInput
+											placeholder="Search by title..."
+											value={searchQuery}
+											onChange={(e) => setSearchQuery(e.target.value)}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") handleSearch();
+											}}
+											className="flex-1 !py-2.5"
+										/>
+										<button
+											type="button"
+											onClick={handleSearch}
+											disabled={searching || !searchQuery.trim()}
+											className="shatter-clip bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant/50 px-4 font-mono text-xs transition-colors flex items-center gap-2 disabled:opacity-50"
+										>
+											{searching ? (
+												<span className="material-symbols-outlined text-[16px] animate-spin">
+													hourglass_top
+												</span>
+											) : (
+												<span className="material-symbols-outlined text-[16px]">
+													search
+												</span>
+											)}
+											SEARCH
+										</button>
+									</div>
+
+									{/* Search Results Dropdown */}
+									{showResults && searchResults.length > 0 && (
+										<div className="absolute z-50 w-full max-w-[calc(100%-2rem)] mt-1 bg-surface border border-outline-variant/30 rounded shadow-xl max-h-64 overflow-y-auto">
+											{searchResults.slice(0, 8).map((result) => (
+												<button
+													key={result.id}
+													type="button"
+													onClick={() => handleSelectResult(result)}
+													className="w-full flex items-center gap-3 p-2 hover:bg-surface-container transition-colors text-left"
+												>
+													{result.background_image ? (
+														<img
+															src={result.background_image}
+															alt={result.name}
+															className="w-12 h-12 object-cover rounded"
+															onError={(e) => {
+																(
+																	e.currentTarget as HTMLImageElement
+																).style.display = "none";
+															}}
+														/>
+													) : (
+														<div className="w-12 h-12 bg-surface-dim rounded flex items-center justify-center">
+															<span className="material-symbols-outlined text-outline-variant text-lg">
+																games
+															</span>
+														</div>
+													)}
+													<div className="flex-1 min-w-0">
+														<p className="font-mono text-xs text-on-surface truncate">
+															{result.name}
+														</p>
+														<p className="font-mono text-[9px] text-outline-variant">
+															{result.released?.slice(0, 4) ?? "TBA"}
+															{result.genres[0]
+																? ` • ${result.genres[0].name}`
+																: ""}
+														</p>
+													</div>
+												</button>
+											))}
+										</div>
+									)}
+
+									{showResults && searchResults.length === 0 && !searching && (
+										<div className="w-full bg-surface border border-outline-variant/30 rounded p-3">
+											<p className="font-mono text-xs text-outline-variant text-center">
+												No results found
+											</p>
+										</div>
+									)}
+								</div>
+
 								{/* Game Title */}
 								<div className="space-y-1">
 									<label className="font-mono text-[10px] text-outline-variant block uppercase">
@@ -355,9 +483,7 @@ export function AddGameModal({
 											Show Wine Settings
 										</span>
 										<span
-											className={`material-symbols-outlined text-lg text-outline-variant transition-transform ${
-												showWineSettings ? "rotate-90" : ""
-											}`}
+											className={`material-symbols-outlined text-lg text-outline-variant transition-transform ${showWineSettings ? "rotate-90" : ""}`}
 										>
 											chevron_right
 										</span>
