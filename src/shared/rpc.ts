@@ -36,9 +36,17 @@ export type LauncherRPC = {
 				params: { query: string };
 				response: RAWGSearchResult[];
 			};
+			metadataSearchSteam: {
+				params: { query: string };
+				response: RAWGSearchResult[];
+			};
 			metadataGetDetails: {
 				params: { rawgId: number; refresh?: boolean };
 				response: RAWGGameDetails | null;
+			};
+			metadataGetSteamDetails: {
+				params: { appId: number };
+				response: RAWGSearchResult | null;
 			};
 		};
 		// biome-ignore lint/complexity/noBannedTypes: empty messages object is intentional for RPC contract
