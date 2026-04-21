@@ -88,9 +88,9 @@ export function AddGameModal({
 		setError(null);
 		setShowResults(true);
 		try {
-			const results = await electroview.rpc.request.metadataSearch(
-				searchQuery.trim(),
-			);
+			const results = await electroview.rpc.request.metadataSearch({
+				query: searchQuery.trim(),
+			});
 			setSearchResults(results);
 		} catch (err) {
 			setError(
