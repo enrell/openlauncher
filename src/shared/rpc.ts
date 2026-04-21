@@ -72,6 +72,10 @@ export type LauncherRPC = {
 				params: { title: string; store: string };
 				response: string | null;
 			};
+			fileToDataUrl: {
+				params: { path: string };
+				response: string | null;
+			};
 		};
 		// biome-ignore lint/complexity/noBannedTypes: empty messages object is intentional for RPC contract
 		messages: {};

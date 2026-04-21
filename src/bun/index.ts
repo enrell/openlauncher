@@ -57,6 +57,18 @@ const rpc = BrowserView.defineRPC<LauncherRPC>({
 				});
 				return files[0] || null;
 			},
+			fileToDataUrl: async ({ path }) => {
+				try {
+					const file = Bun.file(path);
+					if (!await file.exists()) return null;
+					const contents = await file.arrayBuffer();
+					const base64 = Buffer.from(contents).toString("base64");
+					const mimeType = path.endsWith(".png") ? "image/png" : path.endsWith(".jpg") || path.endsWith(".jpeg") ? "image/jpeg" : "image/webp";
+					return `data:${mimeType};base64,${base64}`;
+				} catch {
+					return null;
+				}
+			},
 			...createGameRequestHandlers(gameRepository),
 			...createLaunchRequestHandlers(gameRepository, {
 				started: (payload) => sendLaunchStarted(payload),

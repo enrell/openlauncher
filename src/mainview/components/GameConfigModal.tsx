@@ -93,9 +93,13 @@ export function GameConfigModal({
 		try {
 			const selected = await electroview.rpc.request.openFileDialog();
 			if (selected) {
-				const fileUrl = selected.startsWith("/") ? `file://${selected}` : selected;
-				setCoverUrl(fileUrl);
-				setCoverPreview(fileUrl);
+				const dataUrl = await electroview.rpc.request.fileToDataUrl({ path: selected });
+				if (dataUrl) {
+					setCoverUrl(dataUrl);
+					setCoverPreview(dataUrl);
+				} else {
+					setError("Failed to load image file");
+				}
 			}
 		} catch (err) {
 			setError(`Failed to select file: ${err instanceof Error ? err.message : String(err)}`);
@@ -265,7 +269,17 @@ export function GameConfigModal({
 											<div className="flex gap-2">
 												<TextInput
 													value={coverUrl}
-													onChange={(e) => setCoverUrl(e.target.value)}
+													onChange={async (e) => {
+														const val = e.target.value;
+														setCoverUrl(val);
+														if (val.startsWith("file://")) {
+															const filePath = val.replace(/^file:\/\//, "");
+															const dataUrl = await electroview.rpc.request.fileToDataUrl({ path: filePath });
+															if (dataUrl) setCoverPreview(dataUrl);
+														} else {
+															setCoverPreview(val);
+														}
+													}}
 													placeholder="Paste an URL or select a file..."
 													className="!py-2.5 flex-1"
 												/>
@@ -350,7 +364,7 @@ export function GameConfigModal({
 									<div className="w-36 shrink-0 bg-surface-dim/50 border-l border-outline-variant/20 flex flex-col items-center justify-center p-4">
 										<div className="w-24 h-32 bg-surface-container rounded border-2 border-dashed border-outline-variant/30 flex items-center justify-center">
 											{coverPreview ? (
-												<img src={coverPreview} alt="cover" className="w-full h-full object-cover" onError={() => setCoverPreview("")} />
+												<img src={coverPreview} alt="cover" className="w-full h-full object-cover" />
 											) : (
 												<div className="flex flex-col items-center text-outline-variant/50">
 													<span className="material-symbols-outlined text-3xl">image</span>
