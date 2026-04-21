@@ -95,20 +95,47 @@ export function createMetadataService(
 
 			try {
 				const steamDbResults = await steamDbClient.search(searchQuery);
-				return steamDbResults.map((r) => ({
-					id: r.appid,
-					name: r.name,
-					slug: "",
-					released: null,
-					background_image: r.thumb || null,
-					rating: 0,
-					metacritic: null,
-					genres: [],
-					platforms: [],
-					stores: [],
-				}));
+				return steamDbResults.map((r) => {
+					return {
+						id: r.id,
+						name: r.name,
+						slug: "",
+						released: null,
+						background_image: r.tiny_image || null,
+						rating: 0,
+						metacritic: r.metacritic_score ?? null,
+						genres: [],
+						platforms: [
+							...(r.platforms.windows
+								? [
+										{
+											platform: { id: 0, name: "Windows", slug: "windows" },
+											requirements: null,
+										},
+									]
+								: []),
+							...(r.platforms.mac
+								? [
+										{
+											platform: { id: 0, name: "Mac", slug: "mac" },
+											requirements: null,
+										},
+									]
+								: []),
+							...(r.platforms.linux
+								? [
+										{
+											platform: { id: 0, name: "Linux", slug: "linux" },
+											requirements: null,
+										},
+									]
+								: []),
+						],
+						stores: [],
+					};
+				});
 			} catch (error) {
-				console.warn("SteamDB search failed.", formatError(error));
+				console.warn("Steam search failed.", formatError(error));
 				return [];
 			}
 		},
