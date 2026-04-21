@@ -24,7 +24,7 @@ export type LauncherRPC = {
 					runner: "native" | "umu";
 					args?: string;
 				};
-				response: LaunchResult;
+				response: { started: boolean };
 			};
 			credentialStore: {
 				params: { key: string; value: string };

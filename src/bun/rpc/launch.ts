@@ -57,13 +57,14 @@ export function createLaunchRequestHandlers(
 			path: string;
 			runner: "native" | "umu";
 			args?: string;
-		}): Promise<LaunchResult> => {
+		}): Promise<{ started: boolean }> => {
 			notifyStarted(notifications, {
 				gameId: "",
 				title: "Installer",
 			});
 
-			const result = await execute(
+			// Fire and forget - launch installer without waiting
+			execute(
 				{
 					id: "",
 					title: "Installer",
@@ -72,16 +73,25 @@ export function createLaunchRequestHandlers(
 					args,
 				},
 				{},
-			);
+			)
+				.then((result) => {
+					notifyEnded(notifications, {
+						gameId: "",
+						title: "Installer",
+						exitCode: result.exitCode,
+						durationMs: result.durationMs,
+					});
+				})
+				.catch(() => {
+					notifyEnded(notifications, {
+						gameId: "",
+						title: "Installer",
+						exitCode: -1,
+						durationMs: 0,
+					});
+				});
 
-			notifyEnded(notifications, {
-				gameId: "",
-				title: "Installer",
-				exitCode: result.exitCode,
-				durationMs: result.durationMs,
-			});
-
-			return result;
+			return { started: true };
 		},
 	};
 }

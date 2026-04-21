@@ -23,7 +23,6 @@ export function AddGameModal({
 	const [args, setArgs] = useState("");
 	const [showWineSettings, setShowWineSettings] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [runningInstaller, setRunningInstaller] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 
 	const handleBrowseExecutable = async () => {
@@ -69,22 +68,17 @@ export function AddGameModal({
 				return; // User cancelled
 			}
 
-			setRunningInstaller(true);
-			setError(null);
-
-			// Run the selected exe with umu
+			// Run the selected exe with umu (fire and forget)
 			await electroview.rpc.request.runInstaller({
 				path: selected,
 				runner,
 				args: args.trim() || undefined,
 			});
 
-			// After installer finishes, pre-fill the executable path
+			// Pre-fill the executable path
 			setExecutable(selected);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to run installer");
-		} finally {
-			setRunningInstaller(false);
 		}
 	};
 
@@ -341,14 +335,14 @@ export function AddGameModal({
 									variant="secondary"
 									icon="play_arrow"
 									onClick={handleRunInstaller}
-									disabled={runningInstaller || submitting}
+									disabled={submitting}
 								>
-									{runningInstaller ? "Running..." : "Run Installer First"}
+									Run Installer First
 								</Button>
 								<Button
 									variant="primary"
 									onClick={handleFinish}
-									disabled={submitting || runningInstaller}
+									disabled={submitting}
 								>
 									{submitting ? "Adding..." : "Finish"}
 								</Button>
