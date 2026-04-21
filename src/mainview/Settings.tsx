@@ -7,18 +7,22 @@ import { electroview } from "./electroview";
 
 const RAWG_API_KEY_SECRET = "rawg-api-key";
 
+type MetadataSource = "rawg" | "steam" | "auto";
+
 export function Settings() {
 	const [rawgKey, setRawgKey] = useState("");
 	const [rawgKeyStatus, setRawgKeyStatus] = useState<
 		"loading" | "configured" | "missing"
 	>("loading");
+	const [metadataSource, setMetadataSource] = useState<MetadataSource>("auto");
 	const [saving, setSaving] = useState(false);
 	const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
 	const checkRawgKey = useCallback(async () => {
 		try {
-			const key =
-				await electroview.rpc.request.credentialGet(RAWG_API_KEY_SECRET);
+			const key = await electroview.rpc.request.credentialGet({
+				key: RAWG_API_KEY_SECRET,
+			});
 			if (key) {
 				setRawgKey(key);
 				setRawgKeyStatus("configured");
@@ -31,9 +35,19 @@ export function Settings() {
 		}
 	}, []);
 
+	const checkMetadataSource = useCallback(async () => {
+		try {
+			const source = await electroview.rpc.request.metadataSourceGet();
+			setMetadataSource(source);
+		} catch {
+			setMetadataSource("auto");
+		}
+	}, []);
+
 	useEffect(() => {
 		checkRawgKey();
-	}, [checkRawgKey]);
+		checkMetadataSource();
+	}, [checkRawgKey, checkMetadataSource]);
 
 	const handleSaveRawgKey = async () => {
 		setSaving(true);
@@ -73,6 +87,15 @@ export function Settings() {
 		}
 	};
 
+	const handleMetadataSourceChange = async (source: MetadataSource) => {
+		setMetadataSource(source);
+		try {
+			await electroview.rpc.request.metadataSourceSet({ source });
+		} catch {
+			// Keep UI in sync even if save fails
+		}
+	};
+
 	return (
 		<>
 			<SectionHeader
@@ -87,8 +110,26 @@ export function Settings() {
 					{/* Metadata API Settings */}
 					<Panel title="Game Metadata" icon="search">
 						<SettingRow
+							title="Metadata Source"
+							description="Choose where to fetch game information from"
+							borderColor="border-primary/30"
+						>
+							<Select
+								value={metadataSource}
+								onChange={(e) =>
+									handleMetadataSourceChange(e.target.value as MetadataSource)
+								}
+								options={[
+									{ value: "auto", label: "Auto (RAWG preferred)" },
+									{ value: "rawg", label: "RAWG Only" },
+									{ value: "steam", label: "Steam Only" },
+								]}
+							/>
+						</SettingRow>
+
+						<SettingRow
 							title="RAWG API Key"
-							description="Required for game search and metadata. Get a free key at rawg.io/apidocs"
+							description="Required for RAWG searches. Get a free key at rawg.io/apidocs"
 							borderColor="border-primary/30"
 							isColumn
 						>
@@ -115,7 +156,7 @@ export function Settings() {
 											disabled={saving}
 											className="!text-error"
 										>
-											Remove
+											Remove Key
 										</Button>
 									)}
 									{rawgKeyStatus === "configured" && (
@@ -124,6 +165,14 @@ export function Settings() {
 												check_circle
 											</span>
 											Configured
+										</span>
+									)}
+									{rawgKeyStatus === "missing" && (
+										<span className="font-mono text-[10px] text-outline-variant flex items-center gap-1">
+											<span className="material-symbols-outlined text-[14px]">
+												info
+											</span>
+											Using Steam (no key)
 										</span>
 									)}
 								</div>
@@ -142,8 +191,8 @@ export function Settings() {
 								<span className="text-secondary font-bold">
 									RAWG Attribution Required:
 								</span>{" "}
-								When displaying game data from RAWG, you must include a visible
-								attribution link to{" "}
+								When using RAWG data, you must include a visible attribution
+								link to{" "}
 								<a
 									href="https://rawg.io"
 									target="_blank"
@@ -152,8 +201,8 @@ export function Settings() {
 								>
 									RAWG.io
 								</a>
-								. Free tier: 20,000 requests/month. Data may not be
-								redistributed freely.
+								. Free tier: 20,000 requests/month. Steam does not require
+								attribution.
 							</p>
 						</div>
 					</Panel>

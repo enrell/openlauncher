@@ -48,6 +48,14 @@ export type LauncherRPC = {
 				params: { appId: number };
 				response: RAWGSearchResult | null;
 			};
+			metadataSourceGet: {
+				params: undefined;
+				response: "rawg" | "steam" | "auto";
+			};
+			metadataSourceSet: {
+				params: { source: "rawg" | "steam" | "auto" };
+				response: boolean;
+			};
 		};
 		// biome-ignore lint/complexity/noBannedTypes: empty messages object is intentional for RPC contract
 		messages: {};
