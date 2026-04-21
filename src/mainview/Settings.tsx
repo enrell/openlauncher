@@ -94,8 +94,6 @@ export function Settings() {
 			<SectionHeader
 				title="Settings"
 				subtitle="SYSTEM_CONFIG // USER_PREFERENCES"
-				actionText="APPLY_CHANGES"
-				actionIcon="save"
 			/>
 
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
