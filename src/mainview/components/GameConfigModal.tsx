@@ -51,6 +51,7 @@ export function GameConfigModal({
 	const [coverSearchResults, setCoverSearchResults] = useState<string[]>([]);
 	const [searchingCover, setSearchingCover] = useState(false);
 	const [coverPreview, setCoverPreview] = useState(game.coverImage ?? "");
+	const [previewKey, setPreviewKey] = useState(0);
 
 	useEffect(() => {
 		if (isOpen) {
@@ -58,6 +59,7 @@ export function GameConfigModal({
 			setTitle(game.title);
 			setCoverUrl(game.coverImage ?? "");
 			setCoverPreview(game.coverImage ?? "");
+			setPreviewKey(0);
 			setExecutable(game.path);
 			setCwd(game.cwd ?? "");
 			setLaunchArgs(game.args ?? "");
@@ -97,6 +99,7 @@ export function GameConfigModal({
 				if (dataUrl) {
 					setCoverUrl(dataUrl);
 					setCoverPreview(dataUrl);
+					setPreviewKey(k => k + 1);
 				} else {
 					setError("Failed to load image file");
 				}
@@ -364,7 +367,7 @@ export function GameConfigModal({
 									<div className="w-36 shrink-0 bg-surface-dim/50 border-l border-outline-variant/20 flex flex-col items-center justify-center p-4">
 										<div className="w-24 h-32 bg-surface-container rounded border-2 border-dashed border-outline-variant/30 flex items-center justify-center">
 											{coverPreview ? (
-												<img src={coverPreview} alt="cover" className="w-full h-full object-cover" />
+												<img key={previewKey} src={coverPreview} alt="cover" className="w-full h-full object-cover" />
 											) : (
 												<div className="flex flex-col items-center text-outline-variant/50">
 													<span className="material-symbols-outlined text-3xl">image</span>
