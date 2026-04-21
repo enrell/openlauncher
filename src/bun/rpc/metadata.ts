@@ -1,6 +1,6 @@
 import type { LauncherRPC } from "../../shared/rpc";
 import { deleteSecret, getSecret, storeSecret } from "../credentials";
-import { deobfuscate, obfuscate } from "../credentials/obfuscate";
+import { obfuscate, tryDeobfuscate } from "../credentials/obfuscate";
 import type { MetadataService } from "../metadata";
 
 type MetadataGetSteamDetailsParams =
@@ -71,12 +71,7 @@ export function createMetadataRequestHandlers(
 		},
 		rawgKeyGet: async () => {
 			const stored = await getSecret(RAWG_API_KEY_SECRET);
-			if (!stored) return null;
-			try {
-				return deobfuscate(stored);
-			} catch {
-				return stored;
-			}
+			return tryDeobfuscate(stored);
 		},
 		rawgKeyDelete: async () => {
 			await deleteSecret(RAWG_API_KEY_SECRET);
@@ -87,12 +82,7 @@ export function createMetadataRequestHandlers(
 
 async function getRawgApiKey(): Promise<string | null> {
 	const stored = await getSecret(RAWG_API_KEY_SECRET);
-	if (!stored) return null;
-	try {
-		return deobfuscate(stored);
-	} catch {
-		return stored;
-	}
+	return tryDeobfuscate(stored);
 }
 
 async function getMetadataSource(): Promise<"rawg" | "steam" | "auto"> {

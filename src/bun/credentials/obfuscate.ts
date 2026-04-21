@@ -1,4 +1,5 @@
 const OBFUSCATION_KEY = "openlauncher-meta-v1";
+const STORAGE_PREFIX = "v1:";
 
 export function obfuscate(plaintext: string): string {
 	const keyBytes = new TextEncoder().encode(OBFUSCATION_KEY);
@@ -9,29 +10,38 @@ export function obfuscate(plaintext: string): string {
 		result[i] = textBytes[i] ^ keyBytes[i % keyBytes.length];
 	}
 
-	return Buffer.from(result).toString("base64");
+	return STORAGE_PREFIX + Buffer.from(result).toString("base64");
 }
 
 export function deobfuscate(encoded: string): string {
-	const keyBytes = new TextEncoder().encode(OBFUSCATION_KEY);
-	const data = Buffer.from(encoded, "base64");
-	const result = new Uint8Array(data.length);
+	if (!encoded.startsWith(STORAGE_PREFIX)) {
+		throw new Error("Invalid format - not obfuscated");
+	}
 
-	for (let i = 0; i < data.length; i++) {
-		result[i] = data[i] ^ keyBytes[i % keyBytes.length];
+	const data = encoded.slice(STORAGE_PREFIX.length);
+	const keyBytes = new TextEncoder().encode(OBFUSCATION_KEY);
+	const decoded = Buffer.from(data, "base64");
+	const result = new Uint8Array(decoded.length);
+
+	for (let i = 0; i < decoded.length; i++) {
+		result[i] = decoded[i] ^ keyBytes[i % keyBytes.length];
 	}
 
 	return new TextDecoder().decode(result);
 }
 
-export function frontendObfuscate(plaintext: string): string {
-	return obfuscate(plaintext);
-}
+export function tryDeobfuscate(encoded: string | null): string | null {
+	if (!encoded) return null;
 
-export function frontendDeobfuscate(encoded: string): string {
+	// If it's not obfuscated (old format before v1), return as-is
+	if (!encoded.startsWith(STORAGE_PREFIX)) {
+		return encoded;
+	}
+
 	try {
 		return deobfuscate(encoded);
 	} catch {
+		// If deobfuscate fails, return as-is (shouldn't happen)
 		return encoded;
 	}
 }
