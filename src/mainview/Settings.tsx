@@ -53,12 +53,14 @@ export function Settings() {
 		setSaving(true);
 		setSaveMsg(null);
 		try {
+			const obfuscated = btoa(rawgKey.trim());
 			await electroview.rpc.request.credentialStore({
 				key: RAWG_API_KEY_SECRET,
-				value: rawgKey.trim(),
+				value: obfuscated,
 			});
+			setRawgKey(obfuscated);
 			setRawgKeyStatus("configured");
-			setSaveMsg("API key saved successfully");
+			setSaveMsg("API key saved (obfuscated)");
 		} catch (err) {
 			setSaveMsg(
 				`Failed to save: ${err instanceof Error ? err.message : String(err)}`,
@@ -136,7 +138,9 @@ export function Settings() {
 							<div className="w-full space-y-3">
 								<TextInput
 									placeholder="Paste your RAWG API key here..."
-									value={rawgKey}
+									value={
+										rawgKeyStatus === "configured" ? "••••••••••••" : rawgKey
+									}
 									onChange={(e) => setRawgKey(e.target.value)}
 									className="!py-2.5 font-mono text-xs"
 								/>
