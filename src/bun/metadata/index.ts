@@ -8,6 +8,7 @@ import { createMetadataCache, type MetadataCache } from "./cache";
 import { RAWGClient } from "./client";
 import { SteamClient } from "./steam";
 import { SteamDBClient } from "./steamdb";
+import { SteamGridBottlesClient } from "./steamgrid-bottles";
 
 const RAWG_API_KEY_SECRET = "rawg-api-key";
 
@@ -18,6 +19,7 @@ export type MetadataService = {
 		options?: { refresh?: boolean },
 	): Promise<RAWGGameDetails | null>;
 	searchSteam(query: string): Promise<RAWGSearchResult[]>;
+	searchSteamGrid(query: string): Promise<RAWGSearchResult[]>;
 	getSteamDetails(appId: number): Promise<RAWGSearchResult | null>;
 };
 
@@ -35,6 +37,7 @@ export function createMetadataService(
 
 	const steamDbClient = new SteamDBClient();
 	const steamClient = new SteamClient();
+	const steamGridBottlesClient = new SteamGridBottlesClient();
 
 	return {
 		async searchRAWG(query: string) {
@@ -137,6 +140,32 @@ export function createMetadataService(
 				});
 			} catch (error) {
 				console.warn("Steam search failed.", formatError(error));
+				return [];
+			}
+		},
+
+		async searchSteamGrid(query: string) {
+			const searchQuery = normalizeSearchQuery(query);
+			if (!searchQuery) {
+				return [];
+			}
+
+			try {
+				const imageUrls = await steamGridBottlesClient.search(searchQuery);
+				return imageUrls.map((url, index) => ({
+					id: index,
+					name: query,
+					slug: "",
+					released: null,
+					background_image: url,
+					rating: 0,
+					metacritic: null,
+					genres: [],
+					platforms: [],
+					stores: [],
+				}));
+			} catch (error) {
+				console.warn("SteamGrid search failed.", formatError(error));
 				return [];
 			}
 		},

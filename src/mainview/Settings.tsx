@@ -5,7 +5,7 @@ import { Panel, SettingRow } from "./components/Panels";
 import { SectionHeader } from "./components/SectionHeader";
 import { electroview } from "./electroview";
 
-type MetadataSource = "rawg" | "steam" | "auto";
+type MetadataSource = "rawg" | "steamgrid" | "auto";
 
 export function Settings() {
 	const [rawgKey, setRawgKey] = useState("");
@@ -112,8 +112,8 @@ export function Settings() {
 								}
 								options={[
 									{ value: "auto", label: "Auto (RAWG preferred)" },
-									{ value: "rawg", label: "RAWG Only" },
-									{ value: "steam", label: "Steam Only" },
+									{ value: "rawg", label: "RAWG" },
+									{ value: "steamgrid", label: "SteamGrid" },
 								]}
 							/>
 						</SettingRow>

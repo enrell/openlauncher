@@ -11,6 +11,7 @@ import {
 
 const DEK_KEY = "decryption-key";
 const DEK_BYTES = 32;
+let cachedDEK: Uint8Array | null = null;
 
 export async function getSecret(key: string): Promise<string | null> {
 	const keyringSecret = tryKeyring(() => getKeyringSecret(key));
@@ -43,9 +44,14 @@ export async function deleteSecret(key: string): Promise<boolean> {
 }
 
 export async function ensureDEK(): Promise<Uint8Array> {
+	if (cachedDEK) {
+		return cachedDEK;
+	}
+
 	const storedDEK = await getSecret(DEK_KEY);
 	if (storedDEK) {
-		return Uint8Array.from(Buffer.from(storedDEK, "base64"));
+		cachedDEK = Uint8Array.from(Buffer.from(storedDEK, "base64"));
+		return cachedDEK;
 	}
 
 	const generatedDEK = crypto.getRandomValues(new Uint8Array(DEK_BYTES));
@@ -55,7 +61,8 @@ export async function ensureDEK(): Promise<Uint8Array> {
 		throw new Error("Unable to store OpenLauncher data encryption key.");
 	}
 
-	return generatedDEK;
+	cachedDEK = generatedDEK;
+	return cachedDEK;
 }
 
 function tryKeyring<T>(operation: () => T): T | null {

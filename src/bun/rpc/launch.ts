@@ -2,6 +2,7 @@ import type { LauncherRPC } from "../../shared/rpc";
 import type { LaunchOptions, LaunchResult } from "../../shared/types/launch";
 import type { GameRepository } from "../database/queries";
 import { execute } from "../launcher";
+import { resolveUmuGameId } from "../metadata/umu-database";
 
 type LaunchStartedPayload =
 	LauncherRPC["webview"]["messages"]["gameLaunchStarted"];
@@ -34,15 +35,17 @@ export function createLaunchRequestHandlers(
 				};
 			}
 
+			const resolvedGame = await resolveAndUpdateGameId(game);
+
 			notifyStarted(notifications, {
-				gameId: game.id,
-				title: game.title,
+				gameId: resolvedGame.id,
+				title: resolvedGame.title,
 			});
 
-			const result = await execute(game, options);
+			const result = await execute(resolvedGame, options);
 			notifyEnded(notifications, {
-				gameId: game.id,
-				title: game.title,
+				gameId: resolvedGame.id,
+				title: resolvedGame.title,
 				exitCode: result.exitCode,
 				durationMs: result.durationMs,
 			});

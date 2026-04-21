@@ -2,6 +2,7 @@ import type { LauncherRPC } from "../../shared/rpc";
 import { deleteSecret, getSecret, storeSecret } from "../credentials";
 import { obfuscate, tryDeobfuscate } from "../credentials/obfuscate";
 import type { MetadataService } from "../metadata";
+import { resolveUmuGameId } from "../metadata/umu-database";
 
 type MetadataGetSteamDetailsParams =
 	LauncherRPC["bun"]["requests"]["metadataGetDetails"]["params"];
@@ -26,7 +27,7 @@ export function createMetadataRequestHandlers(
 				}
 			}
 
-			return metadataService.searchSteam(query);
+			return metadataService.searchSteamGrid(query);
 		},
 		metadataSearchSteam: ({ query }: { query: string }) =>
 			metadataService.searchSteam(query),
@@ -41,7 +42,7 @@ export function createMetadataRequestHandlers(
 			metadataService.getSteamDetails(appId),
 		metadataSourceGet: async () => {
 			const source = await getSecret(METADATA_SOURCE_SECRET);
-			if (source === "rawg" || source === "steam" || source === "auto") {
+			if (source === "rawg" || source === "steamgrid" || source === "auto") {
 				return source;
 			}
 			return "auto";
@@ -49,7 +50,7 @@ export function createMetadataRequestHandlers(
 		metadataSourceSet: async ({
 			source,
 		}: {
-			source: "rawg" | "steam" | "auto";
+			source: "rawg" | "steamgrid" | "auto";
 		}) => {
 			await storeSecret(METADATA_SOURCE_SECRET, source);
 			return true;
@@ -66,6 +67,9 @@ export function createMetadataRequestHandlers(
 			await deleteSecret(RAWG_API_KEY_SECRET);
 			return true;
 		},
+		umuDatabaseSearch: async ({ title, store }: { title: string; store: string }) => {
+			return resolveUmuGameId(title, store);
+		},
 	};
 }
 
@@ -74,9 +78,9 @@ async function getRawgApiKey(): Promise<string | null> {
 	return tryDeobfuscate(stored);
 }
 
-async function getMetadataSource(): Promise<"rawg" | "steam" | "auto"> {
+async function getMetadataSource(): Promise<"rawg" | "steamgrid" | "auto"> {
 	const source = await getSecret(METADATA_SOURCE_SECRET);
-	if (source === "rawg" || source === "steam" || source === "auto") {
+	if (source === "rawg" || source === "steamgrid" || source === "auto") {
 		return source;
 	}
 	return "auto";

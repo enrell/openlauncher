@@ -50,10 +50,10 @@ export type LauncherRPC = {
 			};
 			metadataSourceGet: {
 				params: undefined;
-				response: "rawg" | "steam" | "auto";
+				response: "rawg" | "steamgrid" | "auto";
 			};
 			metadataSourceSet: {
-				params: { source: "rawg" | "steam" | "auto" };
+				params: { source: "rawg" | "steamgrid" | "auto" };
 				response: boolean;
 			};
 			rawgKeyStore: {
@@ -67,6 +67,10 @@ export type LauncherRPC = {
 			rawgKeyDelete: {
 				params: undefined;
 				response: boolean;
+			};
+			umuDatabaseSearch: {
+				params: { title: string; store: string };
+				response: string | null;
 			};
 		};
 		// biome-ignore lint/complexity/noBannedTypes: empty messages object is intentional for RPC contract

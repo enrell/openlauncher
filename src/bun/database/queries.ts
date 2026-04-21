@@ -9,6 +9,14 @@ import type {
 	UmuConfig,
 } from "../../shared/types/game";
 import type { GameRow } from "./types";
+import { ensureDEK } from "../credentials";
+import {
+	decrypt,
+	encrypt,
+	isEncrypted,
+	wrapEncrypted,
+	unwrapEncrypted,
+} from "../crypto";
 
 type GameBindings = Record<string, string | null>;
 
@@ -147,7 +155,7 @@ export function createGameRepository(database: Database): GameRepository {
 			const row = selectById.get({ id });
 			return row ? rowToGame(row) : null;
 		},
-		createGame(newGame: NewGame) {
+		async createGame(newGame: NewGame) {
 			const now = new Date().toISOString();
 			const game = normalizeGame({
 				...newGame,
@@ -156,10 +164,10 @@ export function createGameRepository(database: Database): GameRepository {
 				updatedAt: now,
 			});
 
-			insertGame.run(gameToBindings(game));
+			await insertGame.run(await gameToBindings(game));
 			return game;
 		},
-		updateGame(id: string, patch: GamePatch) {
+		async updateGame(id: string, patch: GamePatch) {
 			const currentGame = this.getGame(id);
 			if (!currentGame) {
 				return null;
@@ -176,7 +184,7 @@ export function createGameRepository(database: Database): GameRepository {
 				updatedAt: new Date().toISOString(),
 			});
 
-			updateGame.run(gameToBindings(updatedGame));
+			await updateGame.run(await gameToBindings(updatedGame));
 			return updatedGame;
 		},
 		deleteGame(id: string) {
@@ -305,6 +313,10 @@ function parseStringRecord(
 		return undefined;
 	}
 
+	if (isEncrypted(json)) {
+		return decryptEnv(json);
+	}
+
 	const parsedValue: unknown = JSON.parse(json);
 	if (!isStringRecord(parsedValue)) {
 		throw new Error("Stored environment JSON is not a string record.");
@@ -344,7 +356,7 @@ function parseHooks(json: string | null): GameHooks | undefined {
 	};
 }
 
-function gameToBindings(game: Game): GameBindings {
+async function gameToBindings(game: Game): Promise<GameBindings> {
 	const umu = game.umu;
 
 	return {
@@ -354,7 +366,7 @@ function gameToBindings(game: Game): GameBindings {
 		path: game.path,
 		cwd: game.cwd ?? null,
 		args: game.args ?? null,
-		env_json: stringifyOptional(game.env),
+		env_json: await encryptEnv(game.env),
 		hooks_json: stringifyOptional(game.hooks),
 		cover_image: game.coverImage ?? null,
 		description: game.description ?? null,
@@ -375,4 +387,24 @@ function gameToBindings(game: Game): GameBindings {
 
 function stringifyOptional(value: object | undefined): string | null {
 	return value ? JSON.stringify(value) : null;
+}
+
+async function encryptEnv(
+	env: Record<string, string> | undefined,
+): Promise<string | null> {
+	if (!env) return null;
+	const dek = await ensureDEK();
+	return wrapEncrypted(JSON.stringify(env), dek);
+}
+
+async function decryptEnv(
+	encrypted: string,
+): Promise<Record<string, string>> {
+	const dek = await ensureDEK();
+	const json = unwrapEncrypted(encrypted, dek);
+	const parsedValue: unknown = JSON.parse(json);
+	if (!isStringRecord(parsedValue)) {
+		throw new Error("Decrypted environment JSON is not a string record.");
+	}
+	return parsedValue;
 }
