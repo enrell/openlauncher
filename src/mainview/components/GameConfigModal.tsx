@@ -352,7 +352,7 @@ export function GameConfigModal({
 												value={launchArgs}
 												onChange={(e) => setLaunchArgs(e.target.value)}
 												placeholder="Optional arguments"
-												className="!py-2.5 w-full font-mono"
+												className="!py-2.5 flex-1 font-mono"
 											/>
 										</div>
 
@@ -479,7 +479,7 @@ export function GameConfigModal({
 															value={gamescopeResolution}
 															onChange={(e) => setGamescopeResolution(e.target.value)}
 															placeholder="1920x1080"
-															className="!py-2 font-mono"
+															className="!py-2 w-full font-mono"
 														/>
 													</div>
 													<div>
@@ -488,7 +488,7 @@ export function GameConfigModal({
 															value={gamescopeFrameRate}
 															onChange={(e) => setGamescopeFrameRate(e.target.value)}
 															placeholder="60"
-															className="!py-2 font-mono"
+															className="!py-2 w-full font-mono"
 														/>
 													</div>
 												</div>
