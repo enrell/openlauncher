@@ -5,6 +5,13 @@ export type GameStore = "steam" | "gog" | "epic" | "manual";
 export type GameHooks = {
 	gamescope?: boolean;
 	mangohud?: boolean;
+	gamescopeResolution?: string;
+	gamescopeUpscaling?: "none" | "fsr" | "nis";
+	gamescopeFrameRate?: string;
+	gamescopeBorderless?: boolean;
+	gamescopeFullscreen?: boolean;
+	gamescopeIntegerScale?: boolean;
+	gamescopeVsync?: boolean;
 };
 
 export type UmuConfig = {

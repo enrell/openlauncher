@@ -5,6 +5,11 @@ export type GamescopeUpscaling = "none" | "fsr" | "nis";
 export type LaunchHooks = GameHooks & {
 	gamescopeResolution?: string;
 	gamescopeUpscaling?: GamescopeUpscaling;
+	gamescopeFrameRate?: string;
+	gamescopeBorderless?: boolean;
+	gamescopeFullscreen?: boolean;
+	gamescopeIntegerScale?: boolean;
+	gamescopeVsync?: boolean;
 };
 
 export type LaunchOptions = {

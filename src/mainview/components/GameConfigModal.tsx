@@ -39,6 +39,11 @@ export function GameConfigModal({
 	const [gamescopeUpscaling, setGamescopeUpscaling] = useState<
 		"none" | "fsr" | "nis"
 	>("none");
+	const [gamescopeFrameRate, setGamescopeFrameRate] = useState<string>("");
+	const [gamescopeBorderless, setGamescopeBorderless] = useState(false);
+	const [gamescopeFullscreen, setGamescopeFullscreen] = useState(false);
+	const [gamescopeIntegerScale, setGamescopeIntegerScale] = useState(false);
+	const [gamescopeVsync, setGamescopeVsync] = useState(false);
 	const [envVars, setEnvVars] = useState<Array<{ key: string; value: string }>>(
 		() => {
 			const env = game.env ?? {};
@@ -67,6 +72,13 @@ export function GameConfigModal({
 			setProtonPath(game.umu?.protonPath ?? "");
 			setUseGamescope(game.hooks?.gamescope ?? false);
 			setUseMangoHud(game.hooks?.mangohud ?? false);
+			setGamescopeResolution(game.hooks?.gamescopeResolution ?? "1920x1080");
+			setGamescopeUpscaling((game.hooks?.gamescopeUpscaling as typeof gamescopeUpscaling) ?? "none");
+			setGamescopeFrameRate(game.hooks?.gamescopeFrameRate ?? "");
+			setGamescopeBorderless(game.hooks?.gamescopeBorderless ?? false);
+			setGamescopeFullscreen(game.hooks?.gamescopeFullscreen ?? false);
+			setGamescopeIntegerScale(game.hooks?.gamescopeIntegerScale ?? false);
+			setGamescopeVsync(game.hooks?.gamescopeVsync ?? false);
 			const env = game.env ?? {};
 			setEnvVars(Object.entries(env).map(([key, value]) => ({ key, value })));
 			setError(null);
@@ -148,7 +160,17 @@ export function GameConfigModal({
 				cwd: cwd.trim() || undefined,
 				args: launchArgs.trim() || undefined,
 				coverImage: coverUrl.trim() || undefined,
-				hooks: { gamescope: useGamescope, mangohud: useMangoHud },
+				hooks: {
+					gamescope: useGamescope,
+					mangohud: useMangoHud,
+					gamescopeResolution: gamescopeResolution || undefined,
+					gamescopeUpscaling: gamescopeUpscaling,
+					gamescopeFrameRate: gamescopeFrameRate || undefined,
+					gamescopeBorderless: gamescopeBorderless,
+					gamescopeFullscreen: gamescopeFullscreen,
+					gamescopeIntegerScale: gamescopeIntegerScale,
+					gamescopeVsync: gamescopeVsync,
+				},
 				env: Object.keys(envObject).length > 0 ? envObject : undefined,
 			};
 
@@ -448,37 +470,62 @@ export function GameConfigModal({
 									<SettingRow title="Gamescope" description="Wrap in Gamescope micro-compositor">
 										<Toggle checked={useGamescope} onChange={() => setUseGamescope(!useGamescope)} />
 									</SettingRow>
-									{useGamescope && (
-										<div className="grid grid-cols-2 gap-4 pt-3 pl-4 border-l-2 border-outline-variant/20">
-											<div>
-												<label className="font-mono text-[10px] text-outline-variant block mb-1.5 uppercase">Resolution</label>
-												<TextInput
-													value={gamescopeResolution}
-													onChange={(e) => setGamescopeResolution(e.target.value)}
-													placeholder="1920x1080"
-													className="!py-2 font-mono"
-												/>
+										{useGamescope && (
+											<div className="space-y-4 pt-3 pl-4 border-l-2 border-outline-variant/20">
+												<div className="grid grid-cols-2 gap-4">
+													<div>
+														<label className="font-mono text-[10px] text-outline-variant block mb-1.5 uppercase">Resolution</label>
+														<TextInput
+															value={gamescopeResolution}
+															onChange={(e) => setGamescopeResolution(e.target.value)}
+															placeholder="1920x1080"
+															className="!py-2 font-mono"
+														/>
+													</div>
+													<div>
+														<label className="font-mono text-[10px] text-outline-variant block mb-1.5 uppercase">Target FPS</label>
+														<TextInput
+															value={gamescopeFrameRate}
+															onChange={(e) => setGamescopeFrameRate(e.target.value)}
+															placeholder="60"
+															className="!py-2 font-mono"
+														/>
+													</div>
+												</div>
+												<div>
+													<label className="font-mono text-[10px] text-outline-variant block mb-1.5 uppercase">Upscaling</label>
+													<Select
+														value={gamescopeUpscaling}
+														onChange={(e) => setGamescopeUpscaling(e.target.value as "none" | "fsr" | "nis")}
+														options={[
+															{ value: "none", label: "None" },
+															{ value: "fsr", label: "AMD FSR" },
+															{ value: "nis", label: "NVIDIA NIS" },
+														]}
+														className="!py-2"
+													/>
+												</div>
+												<div className="grid grid-cols-2 gap-3">
+													<SettingRow title="Fullscreen" description="Force fullscreen mode">
+														<Toggle checked={gamescopeFullscreen} onChange={() => setGamescopeFullscreen(!gamescopeFullscreen)} />
+													</SettingRow>
+													<SettingRow title="Borderless" description="Borderless windowed">
+														<Toggle checked={gamescopeBorderless} onChange={() => setGamescopeBorderless(!gamescopeBorderless)} />
+													</SettingRow>
+													<SettingRow title="Integer Scale" description="Scale by whole numbers only">
+														<Toggle checked={gamescopeIntegerScale} onChange={() => setGamescopeIntegerScale(!gamescopeIntegerScale)} />
+													</SettingRow>
+													<SettingRow title="V-Sync" description="Synchronize to display refresh">
+														<Toggle checked={gamescopeVsync} onChange={() => setGamescopeVsync(!gamescopeVsync)} />
+													</SettingRow>
+												</div>
 											</div>
-											<div>
-												<label className="font-mono text-[10px] text-outline-variant block mb-1.5 uppercase">Upscaling</label>
-												<Select
-													value={gamescopeUpscaling}
-													onChange={(e) => setGamescopeUpscaling(e.target.value as "none" | "fsr" | "nis")}
-													options={[
-														{ value: "none", label: "None" },
-														{ value: "fsr", label: "AMD FSR" },
-														{ value: "nis", label: "NVIDIA NIS" },
-													]}
-													className="!py-2"
-												/>
-											</div>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
+										)}
+									</div>
+								)}
+							</div>
 
-						{/* Footer */}
+							{/* Footer */}						{/* Footer */}
 						<div className="relative z-20 flex justify-between items-center px-6 py-4 border-t border-outline-variant/30 bg-surface-container/80 shrink-0">
 							<div>
 								{!showDeleteConfirm ? (

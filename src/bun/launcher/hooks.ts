@@ -22,19 +22,45 @@ export function applyLaunchHooks(
 }
 
 function gamescopeCommandPrefix(hooks: LaunchHooks): string[] {
-	const commandPrefix = ["gamescope", "-f"];
-	const resolution = parseResolution(hooks.gamescopeResolution);
+	const commandPrefix = ["gamescope"];
 
+	const resolution = parseResolution(hooks.gamescopeResolution);
 	if (resolution) {
 		commandPrefix.push("-W", resolution.width, "-H", resolution.height);
 	}
 
+	if (hooks.gamescopeFrameRate) {
+		commandPrefix.push("-r", hooks.gamescopeFrameRate);
+	}
+
+	if (hooks.gamescopeFullscreen) {
+		commandPrefix.push("-F");
+	}
+
+	if (hooks.gamescopeBorderless) {
+		commandPrefix.push("-b");
+	}
+
+	if (hooks.gamescopeIntegerScale) {
+		commandPrefix.push("-i");
+	}
+
+	if (hooks.gamescopeVsync) {
+		commandPrefix.push("-vsync");
+	} else {
+		commandPrefix.push("-nosync");
+	}
+
+	// FSR/NIS upscaling
 	if (
 		hooks.gamescopeUpscaling === "fsr" ||
 		hooks.gamescopeUpscaling === "nis"
 	) {
 		commandPrefix.push("-F", hooks.gamescopeUpscaling);
 	}
+
+	// Always add -f (fullscreen wrapper) at the end
+	commandPrefix.push("-f");
 
 	return commandPrefix;
 }
