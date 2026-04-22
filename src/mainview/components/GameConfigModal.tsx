@@ -244,7 +244,7 @@ export function GameConfigModal({
 						animate={{ opacity: 1, y: 0, scale: 1 }}
 						exit={{ opacity: 0, y: 20, scale: 0.95 }}
 						transition={{ type: "spring", damping: 25, stiffness: 300 }}
-						className="relative w-full max-w-xl max-h-[85vh] flex flex-col bg-surface border border-outline-variant/50 shadow-2xl shatter-clip overflow-hidden"
+						className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-surface border border-outline-variant/50 shadow-2xl shatter-clip overflow-hidden"
 					>
 						<div className="absolute inset-0 scanlines opacity-20 pointer-events-none z-10" />
 
